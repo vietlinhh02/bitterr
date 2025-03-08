@@ -1,0 +1,7 @@
+names:
+- drug-name
+nc: 1
+path: D:/data
+test: D:/data/test
+train: D:/data/train
+val: D:/data/valid
