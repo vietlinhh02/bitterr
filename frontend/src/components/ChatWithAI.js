@@ -43,11 +43,13 @@ import {
   QuestionAnswer as QuestionAnswerIcon,
   History as HistoryIcon,
   Add as AddIcon,
-  Menu as MenuIcon
+  Menu as MenuIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 import { askGeminiAboutDrug, getChatHistory, deleteChatHistoryItem } from '../services/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import DrugSearchDialog from './DrugSearchDialog';
 
 // Update the markdown styles
 const markdownStyles = {
@@ -188,6 +190,7 @@ const ChatWithAI = () => {
   const [error, setError] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [openChatDialog, setOpenChatDialog] = useState(false);  // Điều khiển dialog lịch sử chat
+  const [openDrugSearchDialog, setOpenDrugSearchDialog] = useState(false); // Điều khiển dialog tìm kiếm thuốc
   const chatEndRef = useRef(null);
   const [anchorEl, setAnchorEl] = useState(null);  // Cho dropdown menu
   
@@ -362,11 +365,17 @@ const ChatWithAI = () => {
   };
 
   // Xử lý khi người dùng muốn tạo cuộc trò chuyện mới
-  const handleNewChat = () => {
-    setDrugInfo(null);
+  const handleNewChat = (skipDrugSelection = false) => {
+    // Xóa thông tin thuốc hiện tại và lịch sử chat
     setChatHistory([]);
     setCurrentChatId(null);
-    handleSelectDrug();
+    
+    // Nếu không bỏ qua việc chọn thuốc, mở dialog chọn thuốc
+    if (!skipDrugSelection) {
+      setDrugInfo(null);
+      setOpenDrugSearchDialog(true);
+    }
+    
     setOpenChatDialog(false);
   };
 
@@ -386,116 +395,54 @@ const ChatWithAI = () => {
     handleCloseMenu();
   };
 
+  // Xử lý khi người dùng gửi câu hỏi
   const handleSendQuestion = async () => {
     if (!userInput.trim()) return;
     
     if (!drugInfo) {
-      setError('Vui lòng chọn một loại thuốc trước khi đặt câu hỏi');
+      setError('Vui lòng chọn thuốc trước khi gửi câu hỏi');
       setOpenSnackbar(true);
       return;
     }
-
-    // Kiểm tra drugInfo có đầy đủ thông tin không
-    if (!drugInfo.brand_name && !drugInfo.generic_name) {
-      console.warn('Drug info is missing name:', drugInfo);
-    }
-
-    const question = userInput;
-    setUserInput('');
-    setLoading(true);
-
-    // Thêm câu hỏi của người dùng vào lịch sử chat (UI only)
-    const tempId = Date.now().toString();
-    const newUserQuestion = {
-      _id: tempId,
-      question,
-      answer: '',
-      timestamp: new Date().toISOString(),
-      isLoading: true
-    };
     
-    // Đảm bảo chatHistory là một mảng trước khi cập nhật
-    setChatHistory(prev => Array.isArray(prev) ? [...prev, newUserQuestion] : [newUserQuestion]);
-
+    // Thêm câu hỏi của người dùng vào lịch sử chat
+    const userMessage = { role: 'user', content: userInput };
+    const updatedChatHistory = [...chatHistory, userMessage];
+    setChatHistory(updatedChatHistory);
+    setUserInput('');
+    
+    // Hiển thị trạng thái đang tải
+    setLoading(true);
+    
     try {
-      console.log('Sending question with drug info:', drugInfo);
-      const response = await askGeminiAboutDrug({
-        productInfo: {
-          name: drugInfo.brand_name || drugInfo.generic_name || 'Không có tên',
-          description: drugInfo.indications_and_usage || 'Không có thông tin',
-          ingredients: drugInfo.active_ingredient || 'Không có thông tin',
-          usage: drugInfo.purpose || drugInfo.indications_and_usage || 'Không có thông tin',
-          dosage: drugInfo.dosage_and_administration || 'Không có thông tin',
-          adverseEffect: drugInfo.adverse_reactions || 'Không có thông tin',
-          careful: drugInfo.warnings || 'Không có thông tin',
-          preservation: drugInfo.storage_and_handling || 'Không có thông tin',
-          brand: drugInfo.labeler_name || 'Không có thông tin',
-          category: drugInfo.route || 'Không có thông tin',
-          price: 'Không có thông tin',
-          url: 'FDA Database'
+      // Chuẩn bị dữ liệu để gửi đến API
+      const requestData = {
+        messages: updatedChatHistory,
+        drugInfo: {
+          brand_name: drugInfo.brand_name || '',
+          generic_name: drugInfo.generic_name || '',
+          active_ingredient: drugInfo.active_ingredient || '',
+          indications_and_usage: drugInfo.indications_and_usage || '',
+          warnings: drugInfo.warnings || '',
+          dosage_and_administration: drugInfo.dosage_and_administration || '',
+          adverse_reactions: drugInfo.adverse_reactions || ''
         },
-        question: question
-      });
-      console.log('Gemini API response:', response.data);
+        drugQuery: drugInfo.brand_name || drugInfo.generic_name || 'unknown_drug'
+      };
       
-      // Đảm bảo dữ liệu trả về có timestamp hợp lệ
-      let responseData = response.data;
+      // Gọi API để lấy câu trả lời
+      const response = await askGeminiAboutDrug(requestData);
       
-      // Kiểm tra xem responseData có chứa câu hỏi không
-      if (!responseData.question) {
-        console.log('Response data missing question, adding it back:', question);
-        responseData = {
-          ...responseData,
-          question: question // Thêm câu hỏi vào dữ liệu trả về
-        };
+      // Xử lý kết quả trả về
+      if (response.data && response.data.answer) {
+        const aiMessage = { role: 'assistant', content: response.data.answer };
+        setChatHistory([...updatedChatHistory, aiMessage]);
+      } else {
+        throw new Error('Không nhận được câu trả lời hợp lệ từ API');
       }
-      
-      if (!responseData.timestamp) {
-        responseData = {
-          ...responseData,
-          timestamp: new Date().toISOString()
-        };
-      }
-      
-      console.log('Final response data to be added to chat history:', responseData);
-      
-      // Cập nhật lịch sử chat với câu trả lời từ AI
-      setChatHistory(prev => {
-        if (!Array.isArray(prev)) return [responseData];
-        
-        return prev.map(item => 
-          item._id === tempId 
-            ? { 
-                ...responseData, 
-                _id: item._id, // Giữ nguyên ID tạm thời
-                question: question, // Đảm bảo câu hỏi luôn được giữ lại
-                timestamp: item.timestamp, // Giữ nguyên timestamp ban đầu
-                isLoading: false 
-              } 
-            : item
-        );
-      });
     } catch (err) {
       console.error('Lỗi khi gửi câu hỏi:', err);
-      
-      // Cập nhật lịch sử chat với thông báo lỗi
-      setChatHistory(prev => {
-        if (!Array.isArray(prev)) return [];
-        
-        return prev.map(item => 
-          item._id === tempId 
-            ? { 
-                ...item, 
-                question: question, // Đảm bảo câu hỏi được giữ lại
-                answer: 'Đã xảy ra lỗi khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.', 
-                isLoading: false,
-                isError: true
-              } 
-            : item
-        );
-      });
-      
-      setError('Đã xảy ra lỗi khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.');
+      setError('Đã xảy ra lỗi khi gửi câu hỏi. Vui lòng thử lại sau.');
       setOpenSnackbar(true);
     } finally {
       setLoading(false);
@@ -564,7 +511,31 @@ const ChatWithAI = () => {
   };
 
   const handleSelectDrug = () => {
-    navigate('/fda-drugs', { state: { returnTo: '/chat' } });
+    setOpenDrugSearchDialog(true);
+  };
+
+  const handleCloseDrugSearchDialog = () => {
+    setOpenDrugSearchDialog(false);
+  };
+
+  const handleDrugSelected = (selectedDrug) => {
+    console.log('Thuốc đã chọn:', selectedDrug);
+    
+    // Thiết lập thông tin thuốc đã chọn
+    setDrugInfo(selectedDrug);
+    
+    // Tạo ID cho cuộc trò chuyện mới dựa trên tên thuốc
+    const chatId = selectedDrug.brand_name || selectedDrug.generic_name;
+    setCurrentChatId(chatId);
+    
+    // Thêm thông báo chào mừng
+    const welcomeMessage = {
+      role: 'assistant',
+      content: `Tôi sẽ giúp bạn trả lời các câu hỏi về thuốc ${selectedDrug.brand_name || selectedDrug.generic_name}. Bạn có thể hỏi về tác dụng, liều dùng, tác dụng phụ hoặc bất kỳ thông tin nào khác về thuốc này.`
+    };
+    
+    // Thiết lập lịch sử chat với thông báo chào mừng
+    setChatHistory([welcomeMessage]);
   };
 
   const handleCloseSnackbar = () => {
@@ -634,7 +605,7 @@ const ChatWithAI = () => {
               transformOrigin={{ horizontal: 'right', vertical: 'top' }}
               anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
             >
-              <MenuItem onClick={handleNewChat}>
+              <MenuItem onClick={() => handleNewChat(false)}>
                 <ListItemIcon>
                   <AddIcon fontSize="small" />
                 </ListItemIcon>
@@ -704,7 +675,7 @@ const ChatWithAI = () => {
             <Button 
               startIcon={<AddIcon />}
               color="primary"
-              onClick={handleNewChat}
+              onClick={() => handleNewChat(true)}
             >
               Tạo cuộc trò chuyện mới
             </Button>
@@ -732,7 +703,7 @@ const ChatWithAI = () => {
               <Button 
                 variant="outlined" 
                 size="small" 
-                startIcon={<ArrowBackIcon />}
+                startIcon={<SearchIcon />}
                 onClick={handleSelectDrug}
               >
                 Chọn thuốc khác
@@ -759,9 +730,9 @@ const ChatWithAI = () => {
               variant="contained" 
               color="primary" 
               onClick={handleSelectDrug}
-              startIcon={<MedicalServicesIcon />}
+              startIcon={<SearchIcon />}
             >
-              Chọn thuốc để hỏi
+              Tìm kiếm thuốc
             </Button>
           </Box>
         )}
@@ -803,113 +774,80 @@ const ChatWithAI = () => {
               </Typography>
             </Box>
           ) : (
-            chatHistory.map((chat, index) => (
-              <Fade in={true} key={chat._id} timeout={300} style={{ transitionDelay: `${index * 50}ms` }}>
+            chatHistory.map((message, index) => (
+              <Fade in={true} key={index} timeout={300} style={{ transitionDelay: `${index * 50}ms` }}>
                 <Box>
-                  {/* User Question */}
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'flex-end', 
-                      mb: 1.5,
-                      alignItems: 'flex-start'
-                    }}
-                  >
+                  {message.role === 'user' ? (
+                    // User Message
                     <Box 
                       sx={{ 
-                        maxWidth: '80%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'flex-end'
+                        display: 'flex', 
+                        justifyContent: 'flex-end', 
+                        mb: 1.5,
+                        alignItems: 'flex-start'
                       }}
                     >
                       <Box 
                         sx={{ 
+                          maxWidth: '80%',
                           display: 'flex',
-                          alignItems: 'center',
-                          mb: 0.5
+                          flexDirection: 'column',
+                          alignItems: 'flex-end'
                         }}
                       >
-                        <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>
-                          {formatTimestamp(chat.timestamp)}
-                        </Typography>
-                        <Tooltip title="Xóa" arrow>
-                          <IconButton 
-                            size="small" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteChatItem(chat._id);
-                            }}
-                            sx={{ p: 0.5 }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <Paper 
+                          sx={{ 
+                            p: 2, 
+                            bgcolor: 'primary.main',
+                            color: 'white',
+                            borderRadius: '16px 16px 0 16px'
+                          }}
+                        >
+                          <Typography variant="body1">
+                            {message.content}
+                          </Typography>
+                        </Paper>
                       </Box>
+                      <Avatar 
+                        sx={{ 
+                          ml: 1.5, 
+                          bgcolor: 'primary.dark',
+                          width: 36,
+                          height: 36
+                        }}
+                      >
+                        <PersonIcon />
+                      </Avatar>
+                    </Box>
+                  ) : (
+                    // AI Message
+                    <Box 
+                      sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'flex-start',
+                        alignItems: 'flex-start',
+                        mb: 1.5
+                      }}
+                    >
+                      <Avatar 
+                        sx={{ 
+                          mr: 1.5, 
+                          bgcolor: 'secondary.main',
+                          width: 36,
+                          height: 36
+                        }}
+                      >
+                        <SmartToyIcon />
+                      </Avatar>
                       <Paper 
                         sx={{ 
+                          maxWidth: '80%',
                           p: 2, 
-                          bgcolor: 'primary.main',
-                          color: 'white',
-                          borderRadius: '16px 16px 0 16px'
+                          bgcolor: 'white',
+                          borderRadius: '16px 16px 16px 0',
+                          ...markdownStyles
                         }}
                       >
-                        <Typography variant="body1">
-                          {chat.question}
-                        </Typography>
-                      </Paper>
-                    </Box>
-                    <Avatar 
-                      sx={{ 
-                        ml: 1.5, 
-                        bgcolor: 'primary.dark',
-                        width: 36,
-                        height: 36
-                      }}
-                    >
-                      <PersonIcon />
-                    </Avatar>
-                  </Box>
-                  
-                  {/* AI Answer */}
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'flex-start',
-                      alignItems: 'flex-start'
-                    }}
-                  >
-                    <Avatar 
-                      sx={{ 
-                        mr: 1.5, 
-                        bgcolor: 'secondary.main',
-                        width: 36,
-                        height: 36
-                      }}
-                    >
-                      <SmartToyIcon />
-                    </Avatar>
-                    <Paper 
-                      sx={{ 
-                        maxWidth: '80%',
-                        p: 2, 
-                        bgcolor: 'white',
-                        borderRadius: '16px 16px 16px 0',
-                        ...markdownStyles
-                      }}
-                    >
-                      {chat.isLoading ? (
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <CircularProgress size={20} sx={{ mr: 2 }} />
-                          <Typography variant="body2" color="text.secondary">
-                            AI đang xử lý câu hỏi của bạn...
-                          </Typography>
-                        </Box>
-                      ) : chat.isError ? (
-                        <Typography variant="body1" color="error">
-                          {chat.answer}
-                        </Typography>
-                      ) : (
                         <Box className="markdown-content">
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
@@ -936,78 +874,49 @@ const ChatWithAI = () => {
                                   {...props} 
                                 />
                               ),
-                              code: ({node, inline, ...props}) => 
-                                inline ? (
-                                  <code 
-                                    style={{
-                                      padding: '2px 6px',
-                                      backgroundColor: 'rgba(0,0,0,0.06)',
-                                      borderRadius: 4,
-                                      fontFamily: 'Consolas, Monaco, monospace',
-                                      fontSize: '0.875em'
-                                    }} 
-                                    {...props} 
-                                  />
-                                ) : (
-                                  <pre 
-                                    style={{
-                                      padding: '16px',
-                                      backgroundColor: '#f5f7fa',
-                                      borderRadius: 8,
-                                      overflowX: 'auto',
-                                      margin: '16px 0',
-                                      border: '1px solid #e0e0e0'
-                                    }}
-                                  >
-                                    <code 
-                                      style={{
-                                        fontFamily: 'Consolas, Monaco, monospace',
-                                        fontSize: '0.875em',
-                                        lineHeight: 1.6
-                                      }} 
-                                      {...props} 
-                                    />
-                                  </pre>
-                                ),
-                              blockquote: ({node, ...props}) => (
-                                <Box
-                                  component="blockquote"
-                                  sx={{
-                                    m: 0,
+                              img: ({node, ...props}) => (
+                                <img 
+                                  style={{
+                                    maxWidth: '100%',
+                                    height: 'auto',
+                                    display: 'block',
+                                    margin: '16px 0',
+                                    borderRadius: '4px'
+                                  }} 
+                                  {...props} 
+                                />
+                              ),
+                              pre: ({node, ...props}) => (
+                                <Paper 
+                                  elevation={0}
+                                  sx={{ 
+                                    bgcolor: 'rgba(0,0,0,0.04)', 
+                                    p: 1.5, 
+                                    borderRadius: 1,
                                     mb: 2,
-                                    pl: 2,
-                                    py: 1,
-                                    borderLeft: '4px solid',
-                                    borderColor: 'info.light',
-                                    bgcolor: 'rgba(33, 150, 243, 0.08)',
-                                    borderRadius: '0 4px 4px 0',
-                                    '& p': { m: 0 }
+                                    overflow: 'auto'
                                   }}
                                   {...props}
                                 />
                               ),
-                              h3: ({node, ...props}) => (
-                                <Typography
-                                  variant="h6"
-                                  component="h3"
-                                  sx={{
-                                    color: 'primary.dark',
-                                    fontWeight: 600,
-                                    mt: 3,
-                                    mb: 1.5
+                              code: ({node, inline, ...props}) => (
+                                inline ? 
+                                <Typography 
+                                  component="code"
+                                  sx={{ 
+                                    bgcolor: 'rgba(0,0,0,0.04)', 
+                                    p: 0.3, 
+                                    borderRadius: 0.5,
+                                    fontFamily: 'monospace'
                                   }}
                                   {...props}
-                                />
-                              ),
-                              h4: ({node, ...props}) => (
-                                <Typography
-                                  variant="subtitle1"
-                                  component="h4"
-                                  sx={{
-                                    color: 'primary.dark',
-                                    fontWeight: 600,
-                                    mt: 2,
-                                    mb: 1
+                                /> :
+                                <Typography 
+                                  component="code"
+                                  sx={{ 
+                                    display: 'block',
+                                    fontFamily: 'monospace',
+                                    fontSize: '0.875rem'
                                   }}
                                   {...props}
                                 />
@@ -1039,6 +948,32 @@ const ChatWithAI = () => {
                                       mb: 0.8,
                                       pl: 0.5
                                     }
+                                  }}
+                                  {...props}
+                                />
+                              ),
+                              h3: ({node, ...props}) => (
+                                <Typography 
+                                  variant="h6"
+                                  component="h3"
+                                  sx={{ 
+                                    color: 'primary.dark',
+                                    fontWeight: 600,
+                                    mt: 3,
+                                    mb: 1.5
+                                  }}
+                                  {...props}
+                                />
+                              ),
+                              h4: ({node, ...props}) => (
+                                <Typography 
+                                  variant="subtitle1"
+                                  component="h4"
+                                  sx={{ 
+                                    color: 'primary.dark',
+                                    fontWeight: 600,
+                                    mt: 2,
+                                    mb: 1
                                   }}
                                   {...props}
                                 />
@@ -1087,41 +1022,15 @@ const ChatWithAI = () => {
                                   }}
                                   {...props}
                                 />
-                              ),
-                              hr: ({node, ...props}) => (
-                                <Box
-                                  component="hr"
-                                  sx={{
-                                    my: 2,
-                                    border: 'none',
-                                    borderTop: '1px solid',
-                                    borderColor: 'grey.300'
-                                  }}
-                                  {...props}
-                                />
-                              ),
-                              img: ({node, ...props}) => (
-                                <Box
-                                  component="img"
-                                  sx={{
-                                    maxWidth: '100%',
-                                    height: 'auto',
-                                    display: 'block',
-                                    my: 2,
-                                    borderRadius: 1
-                                  }}
-                                  loading="lazy"
-                                  {...props}
-                                />
                               )
                             }}
                           >
-                            {chat.answer}
+                            {message.content}
                           </ReactMarkdown>
                         </Box>
-                      )}
-                    </Paper>
-                  </Box>
+                      </Paper>
+                    </Box>
+                  )}
                 </Box>
               </Fade>
             ))
@@ -1192,7 +1101,7 @@ const ChatWithAI = () => {
                 variant="contained" 
                 color="primary" 
                 startIcon={<AddIcon />}
-                onClick={handleNewChat}
+                onClick={() => handleNewChat(true)}
                 fullWidth
               >
                 Tạo cuộc trò chuyện mới
@@ -1255,6 +1164,13 @@ const ChatWithAI = () => {
           {error}
         </Alert>
       </Snackbar>
+
+      {/* Dialog tìm kiếm thuốc */}
+      <DrugSearchDialog 
+        open={openDrugSearchDialog}
+        onClose={handleCloseDrugSearchDialog}
+        onSelectDrug={handleDrugSelected}
+      />
     </CustomContainer>
   );
 };

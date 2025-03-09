@@ -163,14 +163,6 @@ function Navigation() {
                   <>
                     <MenuItem 
                       component={Link} 
-                      to="/features" 
-                      onClick={handleClose}
-                    >
-                      <AppsIcon fontSize="small" sx={{ mr: 1 }} />
-                      Tất cả tính năng
-                    </MenuItem>
-                    <MenuItem 
-                      component={Link} 
                       to="/longchau-search" 
                       onClick={handleClose}
                     >
@@ -293,20 +285,6 @@ function Navigation() {
                 
                 {isLoggedIn && (
                   <>
-                    <Button 
-                      color="inherit" 
-                      component={Link} 
-                      to="/features"
-                      startIcon={<AppsIcon />}
-                      sx={{ 
-                        borderRadius: 2, 
-                        px: 1.5,
-                        minWidth: 'auto',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      Tính năng
-                    </Button>
                     <Button 
                       color="inherit" 
                       component={Link} 

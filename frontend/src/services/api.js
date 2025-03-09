@@ -153,12 +153,28 @@ export const translateDrugContent = (content, targetLanguage) => {
 export const askGeminiAboutDrug = async (data) => {
   try {
     console.log('Sending request to Gemini API:', data);
-    const response = await API.post('/gemini/ask', {
-      productInfo: data.productInfo,
-      question: data.question
-    });
-    console.log('Gemini API response:', response);
-    return response;
+    
+    // Kiểm tra xem data có định dạng mới không (messages array)
+    if (data.messages && Array.isArray(data.messages)) {
+      // Định dạng mới với messages và drugInfo
+      const response = await API.post('/gemini/ask', {
+        messages: data.messages,
+        drugInfo: data.drugInfo,
+        drugQuery: data.drugQuery
+      });
+      console.log('Gemini API response:', response);
+      return response;
+    } else if (data.productInfo && data.question) {
+      // Định dạng cũ với productInfo và question
+      const response = await API.post('/gemini/ask', {
+        productInfo: data.productInfo,
+        question: data.question
+      });
+      console.log('Gemini API response:', response);
+      return response;
+    } else {
+      throw new Error('Invalid data format for Gemini API');
+    }
   } catch (error) {
     console.error('Lỗi khi gọi Gemini API:', error);
     if (error.response) {
