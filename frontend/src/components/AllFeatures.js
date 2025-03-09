@@ -34,7 +34,11 @@ import {
   Avatar,
   Chip,
   Badge,
-  Tooltip
+  Tooltip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { 
   Chat as ChatIcon, 
@@ -45,9 +49,11 @@ import {
   Message as MessageIcon,
   Menu as MenuIcon,
   Info as InfoIcon,
-  AccountCircle as AccountCircleIcon
+  AccountCircle as AccountCircleIcon,
+  Warning as WarningIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 // Tạo instance axios với baseURL
 const API = axios.create({ 
@@ -94,6 +100,16 @@ const AllFeatures = () => {
     const [tabValue, setTabValue] = useState(0);
     const [userAvatar, setUserAvatar] = useState(null);
     const [avatarDialog, setAvatarDialog] = useState(false);
+    const [drugEventsParams, setDrugEventsParams] = useState({
+        medicinalproduct: '',
+        reactionmeddrapt: '',
+        reportercountry: '',
+        serious: '',
+        limit: 10
+    });
+    const [drugEventsResults, setDrugEventsResults] = useState([]);
+    const [drugEventsLoading, setDrugEventsLoading] = useState(false);
+    const [drugEventsError, setDrugEventsError] = useState('');
     const ensureString = (value) => {
         if (value === null || value === undefined) {
           return '';
@@ -106,6 +122,15 @@ const AllFeatures = () => {
 
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
+        
+        // Reset các state khi chuyển tab
+        setSearchQuery('');
+        setFdaResults([]);
+        setLongChauResults([]);
+        setSelectedDrug(null);
+        setDrugEventsResults([]);
+        setError('');
+        setDrugEventsError('');
     };
 
     useEffect(() => {
@@ -402,6 +427,63 @@ const AllFeatures = () => {
         }
     };
 
+    const handleDrugEventsInputChange = (e) => {
+        const { name, value } = e.target;
+        setDrugEventsParams(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+    
+    const handleDrugEventsSearch = async () => {
+        // Kiểm tra xem có ít nhất một tham số tìm kiếm
+        if (!drugEventsParams.medicinalproduct && !drugEventsParams.reactionmeddrapt && 
+            !drugEventsParams.reportercountry && !drugEventsParams.serious) {
+            setDrugEventsError('Vui lòng nhập ít nhất một tham số tìm kiếm');
+            return;
+        }
+        
+        setDrugEventsLoading(true);
+        setDrugEventsError('');
+        
+        try {
+            const response = await API.get('/drug/drug-events', { 
+                params: drugEventsParams 
+            });
+            
+            if (response.data && response.data.results) {
+                setDrugEventsResults(response.data.results);
+            } else {
+                setDrugEventsResults([]);
+                setDrugEventsError('Không tìm thấy kết quả nào');
+            }
+        } catch (err) {
+            console.error('Lỗi khi tìm kiếm sự kiện thuốc:', err);
+            setDrugEventsError('Đã xảy ra lỗi khi tìm kiếm sự kiện thuốc. Vui lòng thử lại sau.');
+        } finally {
+            setDrugEventsLoading(false);
+        }
+    };
+    
+    const formatDate = (dateString) => {
+        if (!dateString || dateString === 'N/A') return 'N/A';
+        
+        // Định dạng YYYYMMDD
+        const year = dateString.substring(0, 4);
+        const month = dateString.substring(4, 6);
+        const day = dateString.substring(6, 8);
+        
+        return `${day}/${month}/${year}`;
+    };
+    
+    const getSeriousnessLabel = (value) => {
+        switch(value) {
+            case '1': return 'Nghiêm trọng';
+            case '2': return 'Không nghiêm trọng';
+            default: return 'Không xác định';
+        }
+    };
+
     const renderFDASearch = () => (
         <div>
             <Typography variant="h6" gutterBottom>Tra cứu thuốc FDA</Typography>
@@ -658,6 +740,168 @@ const AllFeatures = () => {
         </div>
     );
 
+    const renderDrugEvents = () => (
+        <Box>
+            <Typography variant="h5" gutterBottom>
+                Tìm kiếm sự kiện thuốc
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+                Tìm kiếm thông tin về các sự kiện bất lợi liên quan đến thuốc từ cơ sở dữ liệu FDA
+            </Typography>
+            
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={12} md={6}>
+                    <TextField
+                        fullWidth
+                        label="Tên thuốc"
+                        name="medicinalproduct"
+                        value={drugEventsParams.medicinalproduct}
+                        onChange={handleDrugEventsInputChange}
+                        placeholder="Ví dụ: ASPIRIN, IBUPROFEN..."
+                        variant="outlined"
+                        size="small"
+                    />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                    <TextField
+                        fullWidth
+                        label="Phản ứng phụ"
+                        name="reactionmeddrapt"
+                        value={drugEventsParams.reactionmeddrapt}
+                        onChange={handleDrugEventsInputChange}
+                        placeholder="Ví dụ: HEADACHE, NAUSEA..."
+                        variant="outlined"
+                        size="small"
+                    />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                    <TextField
+                        fullWidth
+                        label="Quốc gia báo cáo"
+                        name="reportercountry"
+                        value={drugEventsParams.reportercountry}
+                        onChange={handleDrugEventsInputChange}
+                        placeholder="Ví dụ: US, JP, FR..."
+                        variant="outlined"
+                        size="small"
+                    />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                    <FormControl fullWidth variant="outlined" size="small">
+                        <InputLabel>Mức độ nghiêm trọng</InputLabel>
+                        <Select
+                            name="serious"
+                            value={drugEventsParams.serious}
+                            onChange={handleDrugEventsInputChange}
+                            label="Mức độ nghiêm trọng"
+                        >
+                            <MenuItem value="">Tất cả</MenuItem>
+                            <MenuItem value="1">Nghiêm trọng</MenuItem>
+                            <MenuItem value="2">Không nghiêm trọng</MenuItem>
+                        </Select>
+                    </FormControl>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                    <FormControl fullWidth variant="outlined" size="small">
+                        <InputLabel>Số lượng kết quả</InputLabel>
+                        <Select
+                            name="limit"
+                            value={drugEventsParams.limit}
+                            onChange={handleDrugEventsInputChange}
+                            label="Số lượng kết quả"
+                        >
+                            <MenuItem value={5}>5 kết quả</MenuItem>
+                            <MenuItem value={10}>10 kết quả</MenuItem>
+                            <MenuItem value={20}>20 kết quả</MenuItem>
+                            <MenuItem value={50}>50 kết quả</MenuItem>
+                        </Select>
+                    </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleDrugEventsSearch}
+                        disabled={drugEventsLoading}
+                        startIcon={drugEventsLoading ? <CircularProgress size={20} /> : <WarningIcon />}
+                    >
+                        {drugEventsLoading ? 'Đang tìm kiếm...' : 'Tìm kiếm sự kiện thuốc'}
+                    </Button>
+                    <Button
+                        component={Link}
+                        to="/drug-events"
+                        variant="outlined"
+                        color="primary"
+                        sx={{ ml: 2 }}
+                    >
+                        Xem trang đầy đủ
+                    </Button>
+                </Grid>
+            </Grid>
+            
+            {drugEventsError && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {drugEventsError}
+                </Alert>
+            )}
+            
+            {drugEventsResults.length > 0 ? (
+                <Box>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        Tìm thấy {drugEventsResults.length} kết quả
+                    </Alert>
+                    
+                    <List>
+                        {drugEventsResults.slice(0, 3).map((event) => (
+                            <Paper key={event.safetyreportid} sx={{ mb: 2, p: 2 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                                    <Typography variant="subtitle1" fontWeight="bold">
+                                        Báo cáo #{event.safetyreportid}
+                                    </Typography>
+                                    <Chip 
+                                        label={getSeriousnessLabel(event.serious)} 
+                                        color={event.serious === '1' ? 'error' : 'success'} 
+                                        size="small"
+                                    />
+                                </Box>
+                                <Typography variant="body2">
+                                    Ngày nhận: {formatDate(event.receivedate)}
+                                </Typography>
+                                <Typography variant="body2">
+                                    Quốc gia: {event.reportercountry}
+                                </Typography>
+                                <Typography variant="body2">
+                                    Thuốc: {event.drugs?.map(d => d.medicinalproduct).join(', ')}
+                                </Typography>
+                                <Typography variant="body2">
+                                    Phản ứng: {event.reactions?.map(r => r.reactionmeddrapt).join(', ')}
+                                </Typography>
+                            </Paper>
+                        ))}
+                        
+                        {drugEventsResults.length > 3 && (
+                            <Box sx={{ textAlign: 'center', mt: 2 }}>
+                                <Button 
+                                    component={Link}
+                                    to="/drug-events"
+                                    variant="outlined"
+                                >
+                                    Xem tất cả {drugEventsResults.length} kết quả
+                                </Button>
+                            </Box>
+                        )}
+                    </List>
+                </Box>
+            ) : (
+                !drugEventsLoading && !drugEventsError && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                        Nhập thông tin tìm kiếm và nhấn "Tìm kiếm sự kiện thuốc" để xem kết quả.
+                    </Typography>
+                )
+            )}
+        </Box>
+    );
+
     const renderSearchHistory = () => (
         <div>
             <Typography variant="h6" gutterBottom>Lịch sử tìm kiếm</Typography>
@@ -772,108 +1016,46 @@ const AllFeatures = () => {
     };
 
     return (
-        <Container maxWidth="xl" sx={{ mt: 4, mb: 4, pb: isMobile ? 7 : 0 }}>
-            <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ mb: 4 }}>
-                Tra Cứu Thông Tin Thuốc
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
+            <Typography variant="h4" component="h1" gutterBottom>
+                Tất cả tính năng
             </Typography>
-
-            {isMobile && (
-                <AppBar position="fixed" color="primary" sx={{ top: 'auto', bottom: 0 }}>
-                    <Toolbar>
-                        <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
-                            {tabValue === 0 && 'Chat với AI'}
-                            {tabValue === 1 && 'Nhận diện thuốc'}
-                            {tabValue === 2 && 'Tra cứu thuốc FDA'}
-                            {tabValue === 3 && 'Tìm kiếm Long Châu'}
-                            {tabValue === 4 && 'Lịch sử tìm kiếm'}
-                        </Typography>
-                        <IconButton 
-                            color="inherit" 
-                            onClick={() => setMobileMenuOpen(true)}
-                        >
-                            <MenuIcon />
-                        </IconButton>
-                    </Toolbar>
-                </AppBar>
-            )}
-
-            <Drawer
-                anchor="bottom"
-                open={mobileMenuOpen}
-                onClose={() => setMobileMenuOpen(false)}
-            >
-                <Box sx={{ p: 2 }}>
-                    <Typography variant="h6" gutterBottom align="center">
-                        Chọn Tính Năng
-                    </Typography>
-                    <List>
-                        <ListItem button onClick={() => {
-                            setTabValue(0);
-                            setMobileMenuOpen(false);
-                        }}>
-                            <ListItemText primary="Chat với AI" />
-                        </ListItem>
-                        <ListItem button onClick={() => {
-                            setTabValue(1);
-                            setMobileMenuOpen(false);
-                        }}>
-                            <ListItemText primary="Nhận diện thuốc" />
-                        </ListItem>
-                        <ListItem button onClick={() => {
-                            setTabValue(2);
-                            setMobileMenuOpen(false);
-                        }}>
-                            <ListItemText primary="Tra cứu thuốc FDA" />
-                        </ListItem>
-                        <ListItem button onClick={() => {
-                            setTabValue(3);
-                            setMobileMenuOpen(false);
-                        }}>
-                            <ListItemText primary="Tìm kiếm Long Châu" />
-                        </ListItem>
-                        <ListItem button onClick={() => {
-                            setTabValue(4);
-                            setMobileMenuOpen(false);
-                        }}>
-                            <ListItemText primary="Lịch sử tìm kiếm" />
-                        </ListItem>
-                    </List>
-                </Box>
-            </Drawer>
-
-            <Paper sx={{ width: '100%', mb: 2 }}>
-                {!isMobile && (
-                    <Tabs
-                        value={tabValue}
-                        onChange={handleTabChange}
-                        variant="fullWidth"
-                        sx={{ borderBottom: 1, borderColor: 'divider' }}
-                    >
-                        <Tab icon={<ChatIcon />} label="Chat với AI" />
-                        <Tab icon={<PhotoCameraIcon />} label="Nhận diện thuốc" />
-                        <Tab icon={<SearchIcon />} label="Tra cứu FDA" />
-                        <Tab icon={<LocalPharmacyIcon />} label="Long Châu" />
-                        <Tab icon={<HistoryIcon />} label="Lịch sử" />
-                    </Tabs>
-                )}
-
-                <TabPanel value={tabValue} index={0}>
-                    {renderChat()}
-                </TabPanel>
-                <TabPanel value={tabValue} index={1}>
-                    {renderImageDetection()}
-                </TabPanel>
-                <TabPanel value={tabValue} index={2}>
-                    {renderFDASearch()}
-                </TabPanel>
-                <TabPanel value={tabValue} index={3}>
-                    {renderLongChauSearch()}
-                </TabPanel>
-                <TabPanel value={tabValue} index={4}>
-                    {renderSearchHistory()}
-                </TabPanel>
+            
+            <Paper sx={{ mb: 4 }}>
+                <Tabs 
+                    value={tabValue} 
+                    onChange={handleTabChange} 
+                    variant="scrollable"
+                    scrollButtons="auto"
+                >
+                    <Tab icon={<SearchIcon />} label="Tra cứu thuốc" />
+                    <Tab icon={<WarningIcon />} label="Sự kiện thuốc" />
+                    <Tab icon={<ChatIcon />} label="Chat với AI" />
+                    <Tab icon={<PhotoCameraIcon />} label="Nhận diện thuốc" />
+                    <Tab icon={<LocalPharmacyIcon />} label="Long Châu" />
+                    <Tab icon={<HistoryIcon />} label="Lịch sử tìm kiếm" />
+                </Tabs>
             </Paper>
-
+            
+            <TabPanel value={tabValue} index={0}>
+                {renderFDASearch()}
+            </TabPanel>
+            <TabPanel value={tabValue} index={1}>
+                {renderDrugEvents()}
+            </TabPanel>
+            <TabPanel value={tabValue} index={2}>
+                {renderChat()}
+            </TabPanel>
+            <TabPanel value={tabValue} index={3}>
+                {renderImageDetection()}
+            </TabPanel>
+            <TabPanel value={tabValue} index={4}>
+                {renderLongChauSearch()}
+            </TabPanel>
+            <TabPanel value={tabValue} index={5}>
+                {renderSearchHistory()}
+            </TabPanel>
+            
             <Dialog
                 open={confirmDialog.open}
                 onClose={() => setConfirmDialog({ ...confirmDialog, open: false })}
