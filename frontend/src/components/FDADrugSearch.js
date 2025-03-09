@@ -28,7 +28,7 @@ import {
   Info as InfoIcon
 } from '@mui/icons-material';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { searchFDADrugs, searchFDADrugsByIngredients, saveDrugSearchHistory } from '../services/api';
+import { searchFDADrugs, saveDrugSearchHistory } from '../services/api';
 
 function FDADrugSearch() {
   const location = useLocation();
@@ -75,12 +75,9 @@ function FDADrugSearch() {
     setLastSearchType(type);
     
     try {
-      let response;
-      if (type === 'name') {
-        response = await searchFDADrugs(searchKeyword);
-      } else {
-        response = await searchFDADrugsByIngredients(searchKeyword);
-      }
+      // Hiện tại chỉ hỗ trợ tìm kiếm theo tên thuốc
+      // Tìm kiếm theo thành phần đã được thay thế bằng tìm kiếm sự kiện thuốc
+      const response = await searchFDADrugs(searchKeyword);
       
       // Kiểm tra cấu trúc dữ liệu trả về
       console.log('API response:', response.data);
@@ -165,7 +162,7 @@ function FDADrugSearch() {
             Tra cứu thông tin thuốc FDA
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 600, mx: 'auto' }}>
-            Nhập tên thuốc hoặc thành phần hoạt tính để tìm kiếm thông tin chi tiết từ cơ sở dữ liệu FDA
+            Nhập tên thuốc để tìm kiếm thông tin chi tiết từ cơ sở dữ liệu FDA
           </Typography>
         </Box>
 
@@ -179,33 +176,33 @@ function FDADrugSearch() {
           </Alert>
         )}
 
+        <Alert 
+          severity="info" 
+          sx={{ mb: 3, borderRadius: 2 }}
+          icon={<InfoIcon />}
+        >
+          Tính năng tìm kiếm theo thành phần đã được thay thế bằng tính năng mới <Link to="/drug-events">Tìm kiếm sự kiện thuốc</Link>
+        </Alert>
+
         <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
-          <Grid item xs={12} sm={3}>
-            <FormControl fullWidth variant="outlined" size="medium">
-              <InputLabel id="search-type-label">Tìm kiếm theo</InputLabel>
-              <Select
-                labelId="search-type-label"
-                value={searchType}
-                onChange={(e) => setSearchType(e.target.value)}
-                label="Tìm kiếm theo"
-              >
-                <MenuItem value="name">Tên thuốc</MenuItem>
-                <MenuItem value="ingredients">Thành phần</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={7}>
+          <Grid item xs={12} sm={10}>
             <TextField
               fullWidth
               variant="outlined"
-              label={searchType === 'name' ? "Nhập tên thuốc" : "Nhập thành phần hoạt tính"}
+              label="Nhập tên thuốc"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               onKeyPress={handleKeyPress}
               InputProps={{
-                endAdornment: (
+                endAdornment: keyword && (
                   <InputAdornment position="end">
-                    {loading && <CircularProgress size={24} />}
+                    <IconButton
+                      aria-label="clear search"
+                      onClick={() => setKeyword('')}
+                      edge="end"
+                    >
+                      <CloseIcon />
+                    </IconButton>
                   </InputAdornment>
                 ),
               }}
@@ -218,10 +215,10 @@ function FDADrugSearch() {
               color="primary"
               onClick={() => handleSearch()}
               disabled={loading}
-              startIcon={<SearchIcon />}
+              startIcon={loading ? <CircularProgress size={24} color="inherit" /> : <SearchIcon />}
               sx={{ height: '56px' }}
             >
-              Tìm kiếm
+              {loading ? 'Đang tìm...' : 'Tìm kiếm'}
             </Button>
           </Grid>
         </Grid>
@@ -348,7 +345,7 @@ function FDADrugSearch() {
             Không tìm thấy kết quả nào cho "{keyword}".
           </Typography>
           <Typography variant="body2" align="center" color="text.secondary">
-            Vui lòng thử lại với từ khóa khác hoặc thay đổi loại tìm kiếm.
+            Vui lòng thử lại với từ khóa khác hoặc sử dụng tính năng <Link to="/drug-events">Tìm kiếm sự kiện thuốc</Link>.
           </Typography>
         </Box>
       )}
