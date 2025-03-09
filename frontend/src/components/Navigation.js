@@ -26,7 +26,8 @@ import {
   PhotoCamera as PhotoCameraIcon,
   LocalPharmacy as LocalPharmacyIcon,
   Home as HomeIcon,
-  Apps as AppsIcon
+  Apps as AppsIcon,
+  Warning as WarningIcon
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
@@ -149,6 +150,15 @@ function Navigation() {
                   Tra cứu thuốc
                 </MenuItem>
                 
+                <MenuItem 
+                  component={Link} 
+                  to="/drug-events" 
+                  onClick={handleClose}
+                >
+                  <WarningIcon fontSize="small" sx={{ mr: 1 }} />
+                  Sự kiện thuốc
+                </MenuItem>
+                
                 {isLoggedIn && (
                   <>
                     <MenuItem 
@@ -227,13 +237,26 @@ function Navigation() {
             </>
           ) : (
             <>
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                gap: 0.5, 
+                flexWrap: 'nowrap',
+                overflow: 'auto',
+                '&::-webkit-scrollbar': { display: 'none' },
+                msOverflowStyle: 'none',
+                scrollbarWidth: 'none'
+              }}>
                 <Button 
                   color="inherit" 
                   component={Link} 
                   to="/"
                   startIcon={<HomeIcon />}
-                  sx={{ borderRadius: 2, px: 2 }}
+                  sx={{ 
+                    borderRadius: 2, 
+                    px: 1.5,
+                    minWidth: 'auto',
+                    whiteSpace: 'nowrap'
+                  }}
                 >
                   Trang chủ
                 </Button>
@@ -243,9 +266,29 @@ function Navigation() {
                   component={Link} 
                   to="/fda-drugs"
                   startIcon={<SearchIcon />}
-                  sx={{ borderRadius: 2, px: 2 }}
+                  sx={{ 
+                    borderRadius: 2, 
+                    px: 1.5,
+                    minWidth: 'auto',
+                    whiteSpace: 'nowrap'
+                  }}
                 >
-                  Tra cứu thuốc
+                  Tra cứu
+                </Button>
+                
+                <Button 
+                  color="inherit" 
+                  component={Link} 
+                  to="/drug-events"
+                  startIcon={<WarningIcon />}
+                  sx={{ 
+                    borderRadius: 2, 
+                    px: 1.5,
+                    minWidth: 'auto',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Sự kiện
                 </Button>
                 
                 {isLoggedIn && (
@@ -255,16 +298,26 @@ function Navigation() {
                       component={Link} 
                       to="/features"
                       startIcon={<AppsIcon />}
-                      sx={{ borderRadius: 2, px: 2 }}
+                      sx={{ 
+                        borderRadius: 2, 
+                        px: 1.5,
+                        minWidth: 'auto',
+                        whiteSpace: 'nowrap'
+                      }}
                     >
-                      Tất cả tính năng
+                      Tính năng
                     </Button>
                     <Button 
                       color="inherit" 
                       component={Link} 
                       to="/longchau-search"
                       startIcon={<LocalPharmacyIcon />}
-                      sx={{ borderRadius: 2, px: 2 }}
+                      sx={{ 
+                        borderRadius: 2, 
+                        px: 1.5,
+                        minWidth: 'auto',
+                        whiteSpace: 'nowrap'
+                      }}
                     >
                       Long Châu
                     </Button>
@@ -273,7 +326,12 @@ function Navigation() {
                       component={Link} 
                       to="/search-history"
                       startIcon={<HistoryIcon />}
-                      sx={{ borderRadius: 2, px: 2 }}
+                      sx={{ 
+                        borderRadius: 2, 
+                        px: 1.5,
+                        minWidth: 'auto',
+                        whiteSpace: 'nowrap'
+                      }}
                     >
                       Lịch sử
                     </Button>
@@ -282,16 +340,26 @@ function Navigation() {
                       component={Link} 
                       to="/chat"
                       startIcon={<ChatIcon />}
-                      sx={{ borderRadius: 2, px: 2 }}
+                      sx={{ 
+                        borderRadius: 2, 
+                        px: 1.5,
+                        minWidth: 'auto',
+                        whiteSpace: 'nowrap'
+                      }}
                     >
-                      Chat AI
+                      Chat
                     </Button>
                     <Button 
                       color="inherit" 
                       component={Link} 
                       to="/image-detection"
                       startIcon={<PhotoCameraIcon />}
-                      sx={{ borderRadius: 2, px: 2 }}
+                      sx={{ 
+                        borderRadius: 2, 
+                        px: 1.5,
+                        minWidth: 'auto',
+                        whiteSpace: 'nowrap'
+                      }}
                     >
                       Nhận diện
                     </Button>
