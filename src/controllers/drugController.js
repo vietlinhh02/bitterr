@@ -141,47 +141,63 @@ const deleteDrugSearchHistoryItem = async (req, res) => {
   }
 };
 
-// Cập nhật controller để hỗ trợ tìm kiếm theo nhiều thành phần
-const searchDrugByIngredients = async (req, res) => {
+// Cập nhật controller để tìm kiếm sự kiện thuốc
+const searchDrugEvents = async (req, res) => {
   try {
-    const { ingredients } = req.query;
-    if (!ingredients) {
-      return res.status(400).json({ message: 'Missing ingredients query' });
-    }
-
-    // Tách chuỗi ingredients thành mảng các thành phần
-    const ingredientList = ingredients.split(',').map(ingredient => ingredient.trim());
+    const { medicinalproduct, reactionmeddrapt, reportercountry, serious, limit } = req.query;
     
-    const drugInfo = await openDrugService.searchDrugByIngredients(ingredientList);
+    // Tạo đối tượng tham số tìm kiếm
+    const searchParams = {
+      medicinalproduct,
+      reactionmeddrapt,
+      reportercountry,
+      serious,
+      limit: limit ? parseInt(limit) : 10
+    };
     
-    if (!drugInfo || drugInfo.length === 0) {
-      return res.status(404).json({ message: 'No drugs found with these ingredients' });
+    // Gọi service để tìm kiếm sự kiện thuốc
+    const eventData = await openDrugService.searchDrugEvents(searchParams);
+    
+    if (!eventData || !eventData.results || eventData.results.length === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy sự kiện thuốc nào phù hợp' });
     }
 
     // Lưu lịch sử tìm kiếm nếu có thông tin người dùng
     if (req.user && req.user.id) {
+      let queryString = '';
+      if (medicinalproduct) queryString += `medicinalproduct:${medicinalproduct}`;
+      if (reactionmeddrapt) {
+        if (queryString) queryString += ',';
+        queryString += `reaction:${reactionmeddrapt}`;
+      }
+      
       const newSearch = new DrugSearch({
         userId: req.user.id,
-        query: `ingredients:${ingredients}`,
-        results: drugInfo.length > 0 ? drugInfo : null
+        query: queryString || 'drug_events',
+        searchType: 'events',
+        resultCount: eventData.results.length,
+        source: 'fda',
+        timestamp: new Date()
       });
       await newSearch.save();
     }
 
     return res.status(200).json({ 
-      fdaData: drugInfo, 
-      message: 'Found drugs containing the specified ingredients.' 
+      success: true,
+      meta: eventData.meta,
+      results: eventData.results,
+      message: 'Tìm thấy sự kiện thuốc phù hợp.' 
     });
 
   } catch (error) {
-    console.error("Error searching drug by ingredients:", error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Lỗi khi tìm kiếm sự kiện thuốc:", error);
+    return res.status(500).json({ success: false, message: 'Lỗi server khi tìm kiếm sự kiện thuốc' });
   }
 };
 
 module.exports = { 
   searchDrug, 
-  searchDrugByIngredients, 
+  searchDrugEvents, 
   getDrugSearchHistory,
   saveDrugSearchHistory,
   deleteDrugSearchHistoryItem

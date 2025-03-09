@@ -82,8 +82,19 @@ API.interceptors.response.use(
 // API tìm kiếm thuốc từ FDA
 export const searchFDADrugs = (keyword) => API.get(`/drug/search?query=${keyword}`);
 
-// API tìm kiếm thuốc từ FDA theo thành phần
-export const searchFDADrugsByIngredients = (ingredients) => API.get(`/drug/search-by-ingredients?ingredients=${ingredients}`);
+// API tìm kiếm sự kiện thuốc từ FDA
+export const searchDrugEvents = (params) => {
+  // Xây dựng query string từ các tham số
+  const queryParams = new URLSearchParams();
+  
+  if (params.medicinalproduct) queryParams.append('medicinalproduct', params.medicinalproduct);
+  if (params.reactionmeddrapt) queryParams.append('reactionmeddrapt', params.reactionmeddrapt);
+  if (params.reportercountry) queryParams.append('reportercountry', params.reportercountry);
+  if (params.serious) queryParams.append('serious', params.serious);
+  if (params.limit) queryParams.append('limit', params.limit);
+  
+  return API.get(`/drug/drug-events?${queryParams.toString()}`);
+};
 
 // API lấy lịch sử tìm kiếm thuốc
 export const getDrugSearchHistory = () => API.get('/drug/search-history');

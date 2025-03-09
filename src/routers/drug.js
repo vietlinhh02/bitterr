@@ -43,44 +43,6 @@ router.get('/search', authMiddleware, drugController.searchDrug);
 
 /**
  * @swagger
- * /api/drug/search-by-ingredients:
- *   get:
- *     summary: Search for drugs by ingredients
- *     description: Search for drugs containing specific ingredients
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: ingredients
- *         required: true
- *         schema:
- *           type: string
- *         description: Ingredients to search for (comma-separated)
- *     responses:
- *       200:
- *         description: Drugs found containing the specified ingredients
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 fdaData:
- *                   type: array
- *                   items:
- *                     type: object
- *                 message:
- *                   type: string
- *       400:
- *         description: Missing ingredients query
- *       404:
- *         description: No drugs found with these ingredients
- *       500:
- *         description: Server error
- */
-router.get('/search-by-ingredients', authMiddleware, drugController.searchDrugByIngredients);
-
-/**
- * @swagger
  * /api/drug/search-history:
  *   get:
  *     summary: Get drug search history
@@ -161,5 +123,64 @@ router.post('/save-search-history', authMiddleware, drugController.saveDrugSearc
  *         description: Server error
  */
 router.delete('/search-history/:searchId', authMiddleware, drugController.deleteDrugSearchHistoryItem);
+
+/**
+ * @swagger
+ * /api/drug/drug-events:
+ *   get:
+ *     summary: Tìm kiếm sự kiện thuốc
+ *     description: Tìm kiếm sự kiện thuốc từ FDA API
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: medicinalproduct
+ *         schema:
+ *           type: string
+ *         description: Tên thuốc cần tìm kiếm
+ *       - in: query
+ *         name: reactionmeddrapt
+ *         schema:
+ *           type: string
+ *         description: Phản ứng phụ cần tìm kiếm
+ *       - in: query
+ *         name: reportercountry
+ *         schema:
+ *           type: string
+ *         description: Quốc gia báo cáo
+ *       - in: query
+ *         name: serious
+ *         schema:
+ *           type: string
+ *         description: Mức độ nghiêm trọng (1 hoặc 2)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Số lượng kết quả tối đa (mặc định là 10)
+ *     responses:
+ *       200:
+ *         description: Tìm thấy sự kiện thuốc phù hợp
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 meta:
+ *                   type: object
+ *                 results:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: Không tìm thấy sự kiện thuốc nào phù hợp
+ *       500:
+ *         description: Lỗi server
+ */
+router.get('/drug-events', authMiddleware, drugController.searchDrugEvents);
 
 module.exports = router;

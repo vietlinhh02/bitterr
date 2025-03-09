@@ -20,6 +20,7 @@ import LongChauSearch from './components/LongChauSearch';
 import LongChauProductDetail from './components/LongChauProductDetail';
 import AllFeatures from './components/AllFeatures';
 import NotFound from './components/NotFound';
+import DrugEventsSearch from './components/DrugEventsSearch';
 
 // Footer Pages
 import Blog from './pages/footer/Blog';
@@ -165,6 +166,16 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <FDADrugSearch />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Trang tìm kiếm sự kiện thuốc */}
+              <Route 
+                path="/drug-events" 
+                element={
+                  <ProtectedRoute>
+                    <DrugEventsSearch />
                   </ProtectedRoute>
                 } 
               />
