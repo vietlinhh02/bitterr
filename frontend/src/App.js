@@ -20,6 +20,16 @@ import LongChauSearch from './components/LongChauSearch';
 import LongChauProductDetail from './components/LongChauProductDetail';
 import AllFeatures from './components/AllFeatures';
 
+// Footer Pages
+import Blog from './pages/footer/Blog';
+import Database from './pages/footer/Database';
+import Guides from './pages/footer/Guides';
+import FAQ from './pages/footer/FAQ';
+import About from './pages/footer/About';
+import Contact from './pages/footer/Contact';
+import Terms from './pages/footer/Terms';
+import Privacy from './pages/footer/Privacy';
+
 // Tạo theme cho ứng dụng
 const theme = createTheme({
   palette: {
@@ -227,6 +237,16 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
+              
+              {/* Trang footer */}
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/database" element={<Database />} />
+              <Route path="/guides" element={<Guides />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
               
               {/* Route mặc định khi không tìm thấy */}
               <Route path="*" element={

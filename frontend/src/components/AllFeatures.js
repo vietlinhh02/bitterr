@@ -94,6 +94,12 @@ const AllFeatures = () => {
     const [tabValue, setTabValue] = useState(0);
     const [userAvatar, setUserAvatar] = useState(null);
     const [avatarDialog, setAvatarDialog] = useState(false);
+    const ensureString = (value) => {
+        if (value === null || value === undefined) {
+          return '';
+        }
+        return String(value);
+      };
     
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -726,6 +732,7 @@ const AllFeatures = () => {
                                         {product.name}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
+                                    
                                         Giá: {ensureString(product.price)}
                                     </Typography>
                                     <Button

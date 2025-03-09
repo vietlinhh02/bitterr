@@ -20,7 +20,18 @@ import {
   Zoom,
   Alert,
   Snackbar,
-  Link as MuiLink
+  Link as MuiLink,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  Badge
 } from '@mui/material';
 import { 
   Send as SendIcon, 
@@ -29,18 +40,22 @@ import {
   Person as PersonIcon,
   MedicalServices as MedicalServicesIcon,
   ArrowBack as ArrowBackIcon,
-  QuestionAnswer as QuestionAnswerIcon
+  QuestionAnswer as QuestionAnswerIcon,
+  History as HistoryIcon,
+  Add as AddIcon,
+  Menu as MenuIcon
 } from '@mui/icons-material';
 import { askGeminiAboutDrug, getChatHistory, deleteChatHistoryItem } from '../services/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-// Thêm styles cho markdown
+// Update the markdown styles
 const markdownStyles = {
   '& .markdown-content': {
     '& p': {
       m: 0,
-      mb: 1,
+      mb: 1.5,
+      lineHeight: 1.6,
       '&:last-child': {
         mb: 0
       }
@@ -48,37 +63,42 @@ const markdownStyles = {
     '& a': {
       color: 'primary.main',
       textDecoration: 'underline',
+      fontWeight: 500,
       '&:hover': {
         textDecoration: 'none'
       }
     },
     '& code': {
-      p: '2px 4px',
+      px: 0.8,
+      py: 0.4,
       borderRadius: 1,
-      bgcolor: 'rgba(0,0,0,0.04)',
-      fontFamily: 'monospace',
+      bgcolor: 'rgba(0,0,0,0.06)',
+      fontFamily: 'Consolas, Monaco, "Andale Mono", monospace',
       fontSize: '0.875em',
       color: '#d32f2f'
     },
     '& pre': {
       p: 2,
-      borderRadius: 1,
+      borderRadius: 2,
       bgcolor: 'grey.100',
       overflowX: 'auto',
+      mb: 2,
+      border: '1px solid',
+      borderColor: 'grey.200',
       '& code': {
         p: 0,
         bgcolor: 'transparent',
-        color: 'inherit',
+        color: 'text.primary',
         fontSize: '0.875em'
       }
     },
     '& ul, & ol': {
       m: 0,
-      mb: 1,
+      mb: 2,
       pl: 3
     },
     '& li': {
-      mb: 0.5,
+      mb: 0.8,
       '&:last-child': {
         mb: 0
       }
@@ -87,45 +107,71 @@ const markdownStyles = {
       m: 0,
       mb: 2,
       pl: 2,
-      py: 0.5,
+      py: 1,
       borderLeft: '4px solid',
-      borderColor: 'warning.main',
-      bgcolor: 'warning.light',
-      color: 'warning.dark',
+      borderColor: 'info.light',
+      bgcolor: 'rgba(33, 150, 243, 0.08)',
+      color: 'text.primary',
       fontStyle: 'italic'
     },
     '& table': {
       borderCollapse: 'collapse',
       width: '100%',
       mb: 2,
-      bgcolor: 'background.paper'
+      bgcolor: 'background.paper',
+      border: '1px solid',
+      borderColor: 'grey.300',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
     },
     '& th': {
       border: '1px solid',
       borderColor: 'grey.300',
-      p: 1,
-      bgcolor: 'grey.100',
-      fontWeight: 'bold'
+      p: 1.5,
+      bgcolor: 'grey.50',
+      fontWeight: 'bold',
+      textAlign: 'left'
     },
     '& td': {
       border: '1px solid',
       borderColor: 'grey.300',
-      p: 1
+      p: 1.5
+    },
+    '& h1, & h2, & h3, & h4, & h5, & h6': {
+      color: 'primary.dark',
+      fontWeight: 600,
+      mt: 3,
+      mb: 1.5,
+      lineHeight: 1.3
     },
     '& h3': {
+      fontSize: '1.3em',
+    },
+    '& h4': {
       fontSize: '1.2em',
-      fontWeight: 'bold',
-      color: 'primary.main',
-      mt: 2,
-      mb: 1
+    },
+    '& h5': {
+      fontSize: '1.1em', 
     },
     '& strong': {
-      color: 'error.main',
-      fontWeight: 'bold'
+      fontWeight: 600,
+      color: 'text.primary'
     },
     '& em': {
-      color: 'info.main',
+      color: 'text.secondary',
       fontStyle: 'italic'
+    },
+    '& hr': {
+      my: 2,
+      border: 'none',
+      borderTop: '1px solid',
+      borderColor: 'grey.300'
+    },
+    '& img': {
+      maxWidth: '100%',
+      height: 'auto',
+      display: 'block',
+      my: 2,
+      borderRadius: 1
     }
   }
 };
@@ -136,10 +182,14 @@ const ChatWithAI = () => {
   const [userInput, setUserInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
+  const [allChats, setAllChats] = useState([]);  // Danh sách tất cả các cuộc trò chuyện
+  const [currentChatId, setCurrentChatId] = useState(null);  // ID của cuộc trò chuyện hiện tại
   const [drugInfo, setDrugInfo] = useState(null);
   const [error, setError] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [openChatDialog, setOpenChatDialog] = useState(false);  // Điều khiển dialog lịch sử chat
   const chatEndRef = useRef(null);
+  const [anchorEl, setAnchorEl] = useState(null);  // Cho dropdown menu
   
   const suggestedQuestions = [
     "Thuốc này có tác dụng phụ gì không?",
@@ -157,9 +207,9 @@ const ChatWithAI = () => {
     }
   }, [location.state]);
 
-  // Lấy lịch sử chat khi component được mount
+  // Lấy danh sách tất cả các cuộc trò chuyện khi component mount
   useEffect(() => {
-    fetchChatHistory();
+    fetchAllChats();
   }, []);
 
   // Cuộn xuống cuối cùng khi có tin nhắn mới
@@ -167,53 +217,173 @@ const ChatWithAI = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
 
-  const fetchChatHistory = async () => {
+  // Lấy danh sách tất cả các cuộc trò chuyện từ server
+  const fetchAllChats = async () => {
+    try {
+      const response = await getChatHistory();
+      console.log('All chat history response:', response.data);
+      
+      let chatData = [];
+      
+      if (response.data && response.data.success === true && Array.isArray(response.data.chatHistory)) {
+        chatData = response.data.chatHistory;
+      } else if (Array.isArray(response.data)) {
+        chatData = response.data;
+      } else {
+        console.error('Dữ liệu lịch sử chat không phải là mảng:', response.data);
+        return;
+      }
+
+      // Nhóm chat theo drugQuery
+      const groupedChats = {};
+      chatData.forEach(chat => {
+        if (!groupedChats[chat.drugQuery]) {
+          groupedChats[chat.drugQuery] = {
+            drugName: chat.drugQuery,
+            messages: [],
+            lastTimestamp: chat.timestamp
+          };
+        }
+        
+        groupedChats[chat.drugQuery].messages.push(chat);
+        
+        // Cập nhật timestamp gần nhất
+        if (new Date(chat.timestamp) > new Date(groupedChats[chat.drugQuery].lastTimestamp)) {
+          groupedChats[chat.drugQuery].lastTimestamp = chat.timestamp;
+        }
+      });
+      
+      // Chuyển đổi thành mảng và sắp xếp theo timestamp gần đây nhất
+      const chatSessions = Object.values(groupedChats).sort((a, b) => 
+        new Date(b.lastTimestamp) - new Date(a.lastTimestamp)
+      );
+      
+      setAllChats(chatSessions);
+      
+      // Nếu có chat, hiển thị chat gần nhất
+      if (chatSessions.length > 0 && !currentChatId) {
+        loadChatByDrugName(chatSessions[0].drugName);
+      }
+    } catch (err) {
+      console.error('Lỗi khi lấy danh sách chat:', err);
+      setError('Không thể tải lịch sử chat. Vui lòng thử lại sau.');
+      setOpenSnackbar(true);
+    }
+  };
+
+  // Lấy lịch sử chat theo drugQuery
+  const fetchChatHistory = async (drugQuery = null) => {
     try {
       const response = await getChatHistory();
       console.log('Chat history response:', response.data);
       
-      // Kiểm tra dữ liệu trả về
-      if (Array.isArray(response.data)) {
-        // Đảm bảo mỗi mục trong lịch sử chat đều có timestamp hợp lệ
-        const validatedChatHistory = response.data.map(chat => {
-          if (!chat.timestamp) {
-            return {
-              ...chat,
-              timestamp: new Date().toISOString()
-            };
-          }
-          
-          // Kiểm tra timestamp có hợp lệ không
-          try {
-            const date = new Date(chat.timestamp);
-            if (isNaN(date.getTime())) {
-              return {
-                ...chat,
-                timestamp: new Date().toISOString()
-              };
-            }
-          } catch (e) {
-            console.warn('Invalid timestamp in chat history item:', chat);
-            return {
-              ...chat,
-              timestamp: new Date().toISOString()
-            };
-          }
-          
-          return chat;
-        });
-        
-        setChatHistory(validatedChatHistory);
+      // Xử lý cấu trúc response {success: true, chatHistory: Array(20)}
+      let chatHistoryData;
+      
+      if (response.data && response.data.success === true && Array.isArray(response.data.chatHistory)) {
+        // Cấu trúc {success: true, chatHistory: Array(20)}
+        chatHistoryData = response.data.chatHistory;
+        console.log('Đã nhận dữ liệu lịch sử chat từ response.data.chatHistory', chatHistoryData.length);
+      } else if (Array.isArray(response.data)) {
+        // Trường hợp response.data trực tiếp là mảng
+        chatHistoryData = response.data;
+        console.log('Đã nhận dữ liệu lịch sử chat trực tiếp từ response.data', chatHistoryData.length);
       } else {
         console.error('Dữ liệu lịch sử chat không phải là mảng:', response.data);
         setChatHistory([]);
+        return;
       }
+      
+      // Lọc theo drugQuery nếu được cung cấp
+      if (drugQuery) {
+        chatHistoryData = chatHistoryData.filter(chat => chat.drugQuery === drugQuery);
+      }
+      
+      // Đảm bảo mỗi mục trong lịch sử chat đều có timestamp hợp lệ
+      const validatedChatHistory = chatHistoryData.map(chat => {
+        if (!chat.timestamp) {
+          return {
+            ...chat,
+            timestamp: new Date().toISOString()
+          };
+        }
+        
+        // Kiểm tra timestamp có hợp lệ không
+        try {
+          const date = new Date(chat.timestamp);
+          if (isNaN(date.getTime())) {
+            return {
+              ...chat,
+              timestamp: new Date().toISOString()
+            };
+          }
+        } catch (e) {
+          console.warn('Invalid timestamp in chat history item:', chat);
+          return {
+            ...chat,
+            timestamp: new Date().toISOString()
+          };
+        }
+        
+        return chat;
+      });
+      
+      // Sắp xếp theo thứ tự thời gian
+      validatedChatHistory.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      
+      setChatHistory(validatedChatHistory);
     } catch (err) {
       console.error('Lỗi khi lấy lịch sử chat:', err);
       setError('Không thể tải lịch sử chat. Vui lòng thử lại sau.');
       setOpenSnackbar(true);
       setChatHistory([]);
     }
+  };
+
+  // Xử lý khi chọn một cuộc trò chuyện
+  const loadChatByDrugName = (drugName) => {
+    // Tìm thông tin về thuốc từ lịch sử chat
+    const chatSession = allChats.find(chat => chat.drugName === drugName);
+    if (chatSession && chatSession.messages.length > 0) {
+      const firstMessage = chatSession.messages[0];
+      
+      // Cập nhật thông tin thuốc
+      setDrugInfo({
+        brand_name: firstMessage.drugQuery,
+        generic_name: firstMessage.drugQuery,
+        // Các thông tin khác có thể lấy từ message nếu có
+      });
+      
+      setCurrentChatId(drugName);
+      fetchChatHistory(drugName);
+    }
+    
+    setOpenChatDialog(false);
+  };
+
+  // Xử lý khi người dùng muốn tạo cuộc trò chuyện mới
+  const handleNewChat = () => {
+    setDrugInfo(null);
+    setChatHistory([]);
+    setCurrentChatId(null);
+    handleSelectDrug();
+    setOpenChatDialog(false);
+  };
+
+  // Hiển thị menu lịch sử chat
+  const handleMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  // Đóng menu
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+  };
+
+  // Mở dialog lịch sử chat
+  const handleOpenChatHistory = () => {
+    setOpenChatDialog(true);
+    handleCloseMenu();
   };
 
   const handleSendQuestion = async () => {
@@ -352,6 +522,12 @@ const ChatWithAI = () => {
         if (!Array.isArray(prev)) return [];
         return prev.filter(item => item._id !== chatId);
       });
+      
+      // Nếu xóa hết chat, refresh lại danh sách
+      const updatedHistory = chatHistory.filter(item => item._id !== chatId);
+      if (updatedHistory.length === 0) {
+        fetchAllChats();
+      }
     } catch (err) {
       console.error('Lỗi khi xóa mục chat:', err);
       setError('Không thể xóa mục chat. Vui lòng thử lại sau.');
@@ -417,29 +593,127 @@ const ChatWithAI = () => {
             borderTopLeftRadius: 12,
             borderTopRightRadius: 12,
             display: 'flex',
-            alignItems: 'center'
+            alignItems: 'center',
+            justifyContent: 'space-between'
           }}
         >
-          <SmartToyIcon sx={{ mr: 1.5, fontSize: 28 }} />
-          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
-            Chat với AI về Thuốc
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <SmartToyIcon sx={{ mr: 1.5, fontSize: 28 }} />
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Chat với AI về Thuốc
+            </Typography>
+          </Box>
           
-          {drugInfo && (
-            <Chip
-              icon={<MedicalServicesIcon />}
-              label={drugInfo.brand_name || drugInfo.generic_name}
-              color="secondary"
-              variant="filled"
-              sx={{ 
-                color: 'white', 
-                bgcolor: 'rgba(255,255,255,0.2)',
-                '& .MuiChip-icon': { color: 'white' }
-              }}
-            />
-          )}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {drugInfo && (
+              <Chip
+                icon={<MedicalServicesIcon />}
+                label={drugInfo.brand_name || drugInfo.generic_name}
+                color="secondary"
+                variant="filled"
+                sx={{ 
+                  color: 'white', 
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  '& .MuiChip-icon': { color: 'white' }
+                }}
+              />
+            )}
+            
+            <IconButton 
+              color="inherit" 
+              onClick={handleMenuClick}
+              sx={{ ml: 1 }}
+            >
+              <MenuIcon />
+            </IconButton>
+            
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleCloseMenu}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+              <MenuItem onClick={handleNewChat}>
+                <ListItemIcon>
+                  <AddIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Tạo cuộc trò chuyện mới</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={handleOpenChatHistory}>
+                <ListItemIcon>
+                  <HistoryIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Lịch sử trò chuyện</ListItemText>
+              </MenuItem>
+            </Menu>
+          </Box>
         </Box>
         
+        {/* Dialog Lịch sử trò chuyện */}
+        <Dialog
+          open={openChatDialog}
+          onClose={() => setOpenChatDialog(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <HistoryIcon sx={{ mr: 1.5, color: 'primary.main' }} />
+              <Typography variant="h6">Lịch sử trò chuyện</Typography>
+            </Box>
+          </DialogTitle>
+          <DialogContent dividers>
+            {allChats.length === 0 ? (
+              <Box sx={{ py: 2, textAlign: 'center' }}>
+                <Typography color="text.secondary">
+                  Không có lịch sử trò chuyện nào
+                </Typography>
+              </Box>
+            ) : (
+              <List>
+                {allChats.map((chat, index) => (
+                  <ListItem
+                    key={index}
+                    button
+                    onClick={() => loadChatByDrugName(chat.drugName)}
+                    sx={{
+                      mb: 1,
+                      borderRadius: 1,
+                      bgcolor: currentChatId === chat.drugName ? 'action.selected' : 'background.paper',
+                      '&:hover': {
+                        bgcolor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <ListItemIcon>
+                      <Badge badgeContent={chat.messages.length} color="primary">
+                        <MedicalServicesIcon color="primary" />
+                      </Badge>
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary={chat.drugName}
+                      secondary={`${chat.messages.length} tin nhắn - Cập nhật: ${formatTimestamp(chat.lastTimestamp)}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button 
+              startIcon={<AddIcon />}
+              color="primary"
+              onClick={handleNewChat}
+            >
+              Tạo cuộc trò chuyện mới
+            </Button>
+            <Button onClick={() => setOpenChatDialog(false)}>
+              Đóng
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         {/* Drug Info Panel */}
         {drugInfo ? (
           <Box sx={{ p: 2, bgcolor: 'background.paper', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
@@ -643,11 +917,8 @@ const ChatWithAI = () => {
                               p: ({node, ...props}) => (
                                 <Typography 
                                   variant="body1" 
-                                  sx={{ 
-                                    mb: 1.5,
-                                    lineHeight: 1.6,
-                                    '&:last-child': { mb: 0 }
-                                  }} 
+                                  component="p"
+                                  sx={{ mb: 1.5, lineHeight: 1.6 }} 
                                   {...props} 
                                 />
                               ),
@@ -655,8 +926,9 @@ const ChatWithAI = () => {
                                 <MuiLink 
                                   target="_blank" 
                                   rel="noopener noreferrer"
+                                  color="primary"
                                   sx={{
-                                    textDecoration: 'none',
+                                    fontWeight: 500,
                                     '&:hover': {
                                       textDecoration: 'underline'
                                     }
@@ -668,10 +940,10 @@ const ChatWithAI = () => {
                                 inline ? (
                                   <code 
                                     style={{
-                                      padding: '2px 4px',
-                                      backgroundColor: 'rgba(0,0,0,0.04)',
+                                      padding: '2px 6px',
+                                      backgroundColor: 'rgba(0,0,0,0.06)',
                                       borderRadius: 4,
-                                      fontFamily: 'monospace',
+                                      fontFamily: 'Consolas, Monaco, monospace',
                                       fontSize: '0.875em'
                                     }} 
                                     {...props} 
@@ -680,12 +952,21 @@ const ChatWithAI = () => {
                                   <pre 
                                     style={{
                                       padding: '16px',
-                                      backgroundColor: '#f5f5f5',
-                                      borderRadius: 4,
-                                      overflowX: 'auto'
+                                      backgroundColor: '#f5f7fa',
+                                      borderRadius: 8,
+                                      overflowX: 'auto',
+                                      margin: '16px 0',
+                                      border: '1px solid #e0e0e0'
                                     }}
                                   >
-                                    <code {...props} />
+                                    <code 
+                                      style={{
+                                        fontFamily: 'Consolas, Monaco, monospace',
+                                        fontSize: '0.875em',
+                                        lineHeight: 1.6
+                                      }} 
+                                      {...props} 
+                                    />
                                   </pre>
                                 ),
                               blockquote: ({node, ...props}) => (
@@ -695,15 +976,12 @@ const ChatWithAI = () => {
                                     m: 0,
                                     mb: 2,
                                     pl: 2,
-                                    py: 0.5,
+                                    py: 1,
                                     borderLeft: '4px solid',
-                                    borderColor: 'warning.main',
-                                    bgcolor: 'warning.light',
-                                    color: 'warning.dark',
-                                    fontStyle: 'italic',
-                                    '& p': {
-                                      m: 0
-                                    }
+                                    borderColor: 'info.light',
+                                    bgcolor: 'rgba(33, 150, 243, 0.08)',
+                                    borderRadius: '0 4px 4px 0',
+                                    '& p': { m: 0 }
                                   }}
                                   {...props}
                                 />
@@ -711,9 +989,23 @@ const ChatWithAI = () => {
                               h3: ({node, ...props}) => (
                                 <Typography
                                   variant="h6"
+                                  component="h3"
                                   sx={{
-                                    color: 'primary.main',
-                                    fontWeight: 'bold',
+                                    color: 'primary.dark',
+                                    fontWeight: 600,
+                                    mt: 3,
+                                    mb: 1.5
+                                  }}
+                                  {...props}
+                                />
+                              ),
+                              h4: ({node, ...props}) => (
+                                <Typography
+                                  variant="subtitle1"
+                                  component="h4"
+                                  sx={{
+                                    color: 'primary.dark',
+                                    fontWeight: 600,
                                     mt: 2,
                                     mb: 1
                                   }}
@@ -724,12 +1016,13 @@ const ChatWithAI = () => {
                                 <Box
                                   component="ul"
                                   sx={{
-                                    pl: 2,
-                                    mb: 1.5,
+                                    pl: 3,
+                                    mb: 2,
                                     '& li': {
-                                      mb: 0.5,
-                                      '&:last-child': {
-                                        mb: 0
+                                      mb: 0.8,
+                                      pl: 0.5,
+                                      '&::marker': {
+                                        color: 'primary.main'
                                       }
                                     }
                                   }}
@@ -740,13 +1033,11 @@ const ChatWithAI = () => {
                                 <Box
                                   component="ol"
                                   sx={{
-                                    pl: 2,
-                                    mb: 1.5,
+                                    pl: 3,
+                                    mb: 2,
                                     '& li': {
-                                      mb: 0.5,
-                                      '&:last-child': {
-                                        mb: 0
-                                      }
+                                      mb: 0.8,
+                                      pl: 0.5
                                     }
                                   }}
                                   {...props}
@@ -754,21 +1045,72 @@ const ChatWithAI = () => {
                               ),
                               table: ({node, ...props}) => (
                                 <Box
-                                  component="table"
                                   sx={{
-                                    width: '100%',
-                                    mb: 2,
-                                    borderCollapse: 'collapse',
-                                    '& th, & td': {
+                                    overflowX: 'auto',
+                                    mb: 2
+                                  }}
+                                >
+                                  <Box
+                                    component="table"
+                                    sx={{
+                                      width: '100%',
+                                      borderCollapse: 'collapse',
                                       border: '1px solid',
                                       borderColor: 'grey.300',
-                                      p: 1
-                                    },
-                                    '& th': {
-                                      bgcolor: 'grey.100',
-                                      fontWeight: 'bold'
-                                    }
+                                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                    }}
+                                    {...props}
+                                  />
+                                </Box>
+                              ),
+                              th: ({node, ...props}) => (
+                                <Box
+                                  component="th"
+                                  sx={{
+                                    border: '1px solid',
+                                    borderColor: 'grey.300',
+                                    p: 1.5,
+                                    bgcolor: 'grey.50',
+                                    fontWeight: 'bold',
+                                    textAlign: 'left'
                                   }}
+                                  {...props}
+                                />
+                              ),
+                              td: ({node, ...props}) => (
+                                <Box
+                                  component="td"
+                                  sx={{
+                                    border: '1px solid',
+                                    borderColor: 'grey.300',
+                                    p: 1.5
+                                  }}
+                                  {...props}
+                                />
+                              ),
+                              hr: ({node, ...props}) => (
+                                <Box
+                                  component="hr"
+                                  sx={{
+                                    my: 2,
+                                    border: 'none',
+                                    borderTop: '1px solid',
+                                    borderColor: 'grey.300'
+                                  }}
+                                  {...props}
+                                />
+                              ),
+                              img: ({node, ...props}) => (
+                                <Box
+                                  component="img"
+                                  sx={{
+                                    maxWidth: '100%',
+                                    height: 'auto',
+                                    display: 'block',
+                                    my: 2,
+                                    borderRadius: 1
+                                  }}
+                                  loading="lazy"
                                   {...props}
                                 />
                               )
@@ -835,46 +1177,71 @@ const ChatWithAI = () => {
           onTouchStart={(e) => e.stopPropagation()}
           onTouchEnd={(e) => e.stopPropagation()}
         >
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder={drugInfo ? "Nhập câu hỏi của bạn..." : "Vui lòng chọn thuốc trước khi đặt câu hỏi"}
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            disabled={!drugInfo || loading}
-            multiline
-            maxRows={4}
-            size="medium"
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onMouseUp={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => e.stopPropagation()}
-            sx={{ 
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 3,
-                bgcolor: '#f5f7f9'
-              }
-            }}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            endIcon={<SendIcon />}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleSendQuestion();
-            }}
-            disabled={!drugInfo || !userInput.trim() || loading}
-            sx={{ 
-              height: 56, 
-              borderRadius: 3,
-              px: 3
-            }}
-          >
-            Gửi
-          </Button>
+          {!drugInfo ? (
+            <>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<HistoryIcon />}
+                onClick={handleOpenChatHistory}
+                sx={{ mr: 1 }}
+              >
+                Lịch sử chat
+              </Button>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                startIcon={<AddIcon />}
+                onClick={handleNewChat}
+                fullWidth
+              >
+                Tạo cuộc trò chuyện mới
+              </Button>
+            </>
+          ) : (
+            <>
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder={drugInfo ? "Nhập câu hỏi của bạn..." : "Vui lòng chọn thuốc trước khi đặt câu hỏi"}
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                disabled={!drugInfo || loading}
+                multiline
+                maxRows={4}
+                size="medium"
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
+                sx={{ 
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    bgcolor: '#f5f7f9'
+                  }
+                }}
+              />
+              <Button
+                variant="contained"
+                color="primary"
+                endIcon={<SendIcon />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSendQuestion();
+                }}
+                disabled={!drugInfo || !userInput.trim() || loading}
+                sx={{ 
+                  height: 56, 
+                  borderRadius: 3,
+                  px: 3
+                }}
+              >
+                Gửi
+              </Button>
+            </>
+          )}
         </Box>
       </Paper>
 
@@ -892,4 +1259,4 @@ const ChatWithAI = () => {
   );
 };
 
-export default ChatWithAI; 
+export default ChatWithAI;

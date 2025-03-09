@@ -1,111 +1,86 @@
-# BiiterNCKH Project
+# Bitterr
 
-## Giới thiệu
-BiiterNCKH là một dự án web application được xây dựng với Node.js cho backend và React cho frontend. Dự án này tích hợp nhiều công nghệ hiện đại và API của Google để cung cấp các tính năng đa dạng.
+## Overview
+Bitterr is a modern web application designed to [brief description of your project's purpose]. This platform provides users with a seamless experience for [main functionality].
 
-## Cấu trúc Dự án
-```
-├── frontend/           # Thư mục chứa mã nguồn React frontend
-├── src/               # Thư mục chứa mã nguồn Node.js backend
-├── ml_models/         # Thư mục chứa các model machine learning
-├── uploads/           # Thư mục lưu trữ file upload
-└── runs/              # Thư mục chứa logs và data runtime
-```
+## Features
+- User authentication and profile management
+- ✨ [Tính năng 2]
+- 🚀 [Tính năng 3]
+- 📱 Thiết kế đáp ứng cho mọi thiết bị
 
-## Công nghệ sử dụng
+## 🛠️ Công Nghệ Sử Dụng
+- **Frontend:** [Liệt kê công nghệ frontend]
+- **Backend:** [Liệt kê công nghệ backend]
+- **Cơ sở dữ liệu:** [Cơ sở dữ liệu đã sử dụng]
+- **Xác thực:** [Hệ thống xác thực]
+- **Triển khai:** [Nền tảng triển khai]
 
-### Backend
-- Node.js
-- Express.js
-- MongoDB với Mongoose
-- JWT cho authentication
-- Swagger cho API documentation
-- Google Cloud Translate API
-- Google Generative AI
-- Multer cho file upload
+## 📥 Cài Đặt
 
-### Frontend
-- React
-- Webpack
-- Các thư viện UI/UX hiện đại
+### Yêu Cầu Hệ Thống
+- Node.js (v14.0.0 trở lên)
+- npm hoặc yarn
+- [Các phụ thuộc khác]
 
-## Cài đặt
-
-### Yêu cầu hệ thống
-- Node.js (phiên bản mới nhất)
-- MongoDB
-- NPM hoặc Yarn
-
-### Các bước cài đặt
-
-1. Clone repository:
+### Hướng Dẫn Cài Đặt
+1. **Sao chép kho lưu trữ**
 ```bash
-git clone [repository-url]
+git clone https://github.com/yourusername/bitterr.git
+cd bitterr
 ```
 
-2. Cài đặt dependencies cho backend:
+2. **Cài đặt các gói phụ thuộc**
 ```bash
 npm install
+# hoặc
+yarn install
 ```
 
-3. Cài đặt dependencies cho frontend:
+3. **Thiết lập biến môi trường**
 ```bash
-cd frontend
-npm install
+cp .env.example .env
 ```
+Chỉnh sửa tệp `.env` với cấu hình của bạn
 
-4. Tạo file .env trong thư mục gốc và thêm các biến môi trường cần thiết:
-```
-MONGODB_URI=your_mongodb_uri
-JWT_SECRET=your_jwt_secret
-GOOGLE_API_KEY=your_google_api_key
-```
-
-## Chạy ứng dụng
-
-### Development Mode
-
-1. Chạy backend:
+4. **Chạy máy chủ phát triển**
 ```bash
 npm run dev
+# hoặc
+yarn dev
 ```
 
-2. Chạy frontend:
-```bash
-cd frontend
-npm start
+## 📘 Hướng Dẫn Sử Dụng
+[Include screenshots or examples of how to use the application]
+
+## Project Structure
+```
+bitterr/
+├── public/           # Static files
+├── src/              # Source files
+│   ├── components/   # UI components
+│   ├── pages/        # Application pages
+│   ├── styles/       # CSS/SCSS styles
+│   ├── utils/        # Utility functions
+├── [Other directories]
 ```
 
-### Production Mode
-
-1. Build frontend:
-```bash
-cd frontend
-npm run build
-```
-
-2. Chạy server:
-```bash
-npm start
-```
-
-## API Documentation
-
-API documentation được tạo tự động bằng Swagger và có thể truy cập tại:
-```
-http://localhost:[port]/api-docs
-```
-
-## Tính năng chính
-- Authentication và Authorization
-- Tích hợp Google Translate API
-- Tích hợp Google Generative AI
-- File upload và quản lý
-- RESTful API
-- Swagger documentation
+## Contributing
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
-ISC
+[Specify your license or state "Distributed under the XYZ License. See `LICENSE` for more information."]
 
-## Tác giả
-[eddiesngu] 
+## Contact
+- Developer: [Your Name]
+- Email: [Your Email]
+- Project Link: [GitHub repository URL]
+
+## Acknowledgements
+- [Library/Resource 1]
+- [Library/Resource 2]
+- [Person/Organization that helped]

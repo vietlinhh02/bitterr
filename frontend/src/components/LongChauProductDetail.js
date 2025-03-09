@@ -583,53 +583,6 @@ const LongChauProductDetail = () => {
                     borderRadius: 2,
                     backgroundColor: msg.role === 'user' ? 'primary.light' : 'white',
                     color: msg.role === 'user' ? 'white' : 'text.primary',
-                    '& .markdown-content': {
-                      '& p': {
-                        m: 0,
-                        mb: 1,
-                        '&:last-child': {
-                          mb: 0
-                        }
-                      },
-                      '& a': {
-                        color: msg.role === 'user' ? 'inherit' : 'primary.main',
-                        textDecoration: 'underline'
-                      },
-                      '& code': {
-                        p: 0.5,
-                        borderRadius: 1,
-                        bgcolor: msg.role === 'user' ? 'rgba(255,255,255,0.1)' : 'grey.100',
-                        fontFamily: 'monospace'
-                      },
-                      '& pre': {
-                        p: 1,
-                        borderRadius: 1,
-                        bgcolor: msg.role === 'user' ? 'rgba(255,255,255,0.1)' : 'grey.100',
-                        overflowX: 'auto'
-                      },
-                      '& ul, & ol': {
-                        m: 0,
-                        mb: 1,
-                        pl: 2
-                      },
-                      '& blockquote': {
-                        m: 0,
-                        mb: 1,
-                        pl: 1,
-                        borderLeft: '3px solid',
-                        borderColor: msg.role === 'user' ? 'rgba(255,255,255,0.3)' : 'grey.300'
-                      },
-                      '& table': {
-                        borderCollapse: 'collapse',
-                        width: '100%',
-                        mb: 1
-                      },
-                      '& th, & td': {
-                        border: '1px solid',
-                        borderColor: msg.role === 'user' ? 'rgba(255,255,255,0.2)' : 'grey.300',
-                        p: 0.5
-                      }
-                    }
                   }}
                 >
                   {msg.role === 'user' ? (
@@ -637,18 +590,166 @@ const LongChauProductDetail = () => {
                       {msg.content}
                     </Typography>
                   ) : (
-                    <Box className="markdown-content">
+                    <Box className="markdown-content" sx={{
+                      '& .markdown-body': {
+                        fontFamily: 'inherit',
+                        fontSize: '0.875rem',
+                        lineHeight: 1.5,
+                      },
+                      '& p': {
+                        mt: 0,
+                        mb: 1.5,
+                        '&:last-child': {
+                          mb: 0
+                        }
+                      },
+                      '& h1, & h2, & h3, & h4, & h5, & h6': {
+                        mt: 1.5,
+                        mb: 1,
+                        fontWeight: 600,
+                        lineHeight: 1.25
+                      },
+                      '& h1': { fontSize: '1.5rem' },
+                      '& h2': { fontSize: '1.25rem' },
+                      '& h3': { fontSize: '1.125rem' },
+                      '& h4, & h5, & h6': { fontSize: '1rem' },
+                      '& a': {
+                        color: 'primary.main',
+                        textDecoration: 'none',
+                        '&:hover': {
+                          textDecoration: 'underline'
+                        }
+                      },
+                      '& code': {
+                        p: '2px 4px',
+                        mx: '2px',
+                        borderRadius: 1,
+                        bgcolor: 'rgba(0, 0, 0, 0.06)',
+                        fontFamily: 'Consolas, Monaco, monospace',
+                        fontSize: '0.85em'
+                      },
+                      '& pre': {
+                        mt: 1,
+                        mb: 1.5,
+                        p: 1.5,
+                        borderRadius: 1,
+                        bgcolor: 'rgba(0, 0, 0, 0.06)',
+                        overflowX: 'auto',
+                        '& code': {
+                          p: 0,
+                          bgcolor: 'transparent'
+                        }
+                      },
+                      '& blockquote': {
+                        borderLeft: '4px solid',
+                        borderColor: 'divider',
+                        pl: 1.5,
+                        ml: 0,
+                        color: 'text.secondary'
+                      },
+                      '& ul, & ol': {
+                        mt: 0,
+                        mb: 1.5,
+                        pl: 2.5,
+                        '& li': {
+                          mb: 0.5
+                        }
+                      },
+                      '& table': {
+                        borderCollapse: 'collapse',
+                        width: '100%',
+                        mt: 1,
+                        mb: 1.5,
+                        fontSize: '0.875rem'
+                      },
+                      '& th, & td': {
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        p: 0.75,
+                        textAlign: 'left'
+                      },
+                      '& th': {
+                        bgcolor: 'rgba(0, 0, 0, 0.04)',
+                        fontWeight: 600
+                      },
+                      '& hr': {
+                        my: 1.5,
+                        border: 0,
+                        height: '1px',
+                        bgcolor: 'divider'
+                      },
+                      '& img': {
+                        maxWidth: '100%',
+                        borderRadius: 1
+                      }
+                    }}>
                       <ReactMarkdown 
                         remarkPlugins={[remarkGfm]}
                         components={{
-                          p: ({node, ...props}) => <Typography variant="body2" {...props} />,
+                          p: ({node, ...props}) => <Typography variant="body2" component="p" {...props} />,
                           a: ({node, ...props}) => <MuiLink target="_blank" rel="noopener noreferrer" {...props} />,
-                          code: ({node, inline, ...props}) => 
-                            inline ? (
-                              <code style={{padding: '2px 4px'}} {...props} />
+                          code: ({node, inline, className, children, ...props}) => {
+                            const match = /language-(\w+)/.exec(className || '');
+                            return !inline && match ? (
+                              <Box component="pre" sx={{
+                                position: 'relative',
+                                '&:hover .copy-button': {
+                                  opacity: 1
+                                }
+                              }}>
+                                <Box component="code" className={className} {...props}>
+                                  {children}
+                                </Box>
+                                <Typography 
+                                  variant="caption" 
+                                  sx={{
+                                    position: 'absolute',
+                                    top: '0.25rem',
+                                    right: '0.5rem',
+                                    color: 'text.secondary',
+                                    bgcolor: 'rgba(255,255,255,0.7)',
+                                    px: 0.5,
+                                    borderRadius: 0.5
+                                  }}
+                                >
+                                  {match[1]}
+                                </Typography>
+                              </Box>
                             ) : (
-                              <pre style={{padding: '8px', overflowX: 'auto'}}><code {...props} /></pre>
-                            )
+                              <Box component="code" className={className} {...props}>
+                                {children}
+                              </Box>
+                            );
+                          },
+                          h1: ({node, ...props}) => <Typography variant="h6" gutterBottom {...props} />,
+                          h2: ({node, ...props}) => <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }} {...props} />,
+                          h3: ({node, ...props}) => <Typography variant="body1" gutterBottom sx={{ fontWeight: 600 }} {...props} />,
+                          h4: ({node, ...props}) => <Typography variant="body2" gutterBottom sx={{ fontWeight: 600 }} {...props} />,
+                          h5: ({node, ...props}) => <Typography variant="body2" gutterBottom sx={{ fontWeight: 600, fontSize: '0.9rem' }} {...props} />,
+                          h6: ({node, ...props}) => <Typography variant="body2" gutterBottom sx={{ fontWeight: 600, fontSize: '0.85rem' }} {...props} />,
+                          ul: ({node, ...props}) => <Box component="ul" sx={{ pl: 2 }} {...props} />,
+                          ol: ({node, ...props}) => <Box component="ol" sx={{ pl: 2 }} {...props} />,
+                          li: ({node, ...props}) => <Box component="li" sx={{ mb: 0.5 }} {...props} />,
+                          table: ({node, ...props}) => (
+                            <Box sx={{ overflowX: 'auto' }}>
+                              <table style={{ borderCollapse: 'collapse', width: '100%' }} {...props} />
+                            </Box>
+                          ),
+                          blockquote: ({node, ...props}) => (
+                            <Box 
+                              component="blockquote" 
+                              sx={{ 
+                                borderLeft: '4px solid',
+                                borderColor: 'divider',
+                                pl: 2, 
+                                py: 0.5,
+                                my: 1.5,
+                                bgcolor: 'rgba(0, 0, 0, 0.02)',
+                                color: 'text.secondary' 
+                              }} 
+                              {...props} 
+                            />
+                          ),
                         }}
                       >
                         {msg.content}
@@ -703,4 +804,4 @@ const LongChauProductDetail = () => {
   );
 };
 
-export default LongChauProductDetail; 
+export default LongChauProductDetail;

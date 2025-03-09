@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Khởi tạo YOLO model
-yolo_model = detect_utils.YOLO("../runs/detect/yolo11n3/weights/best.pt")
+yolo_model = detect_utils.YOLO("../runs/detect/yolo11n3/best.pt")
 
 # Cấu hình upload
 UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'uploads'))
@@ -49,12 +49,23 @@ def detect_upload():
             if not ocr_results:
                 return jsonify({'message': 'No text detected in image', 'results': []}), 200
                 
+            # Chuẩn bị kết quả JSON
+            results = []
+            for item in ocr_results:
+                if len(item) >= 5:  # Đảm bảo có ít nhất 5 phần tử (x_min, y_min, x_max, y_max, text)
+                    x_min, y_min, x_max, y_max, text = item[0:5]
+                    result_item = {
+                        'bbox': [x_min, y_min, x_max, y_max],
+                        'text': text
+                    }
+                    # Thêm verified_text nếu có
+                    if len(item) >= 6 and item[5] is not None:
+                        result_item['verified_text'] = item[5]
+                    results.append(result_item)
+            
             return jsonify({
                 'message': 'Detection successful',
-                'results': [{
-                    'bbox': [x_min, y_min, x_max, y_max],
-                    'text': text
-                } for x_min, y_min, x_max, y_max, text in ocr_results]
+                'results': results
             }), 200
             
         except Exception as e:
