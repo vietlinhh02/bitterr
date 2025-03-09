@@ -18,13 +18,14 @@ const searchDrugOnLongChau = async (req, res) => {
     
     const searchResults = await longChauService.searchDrugOnLongChau(keyword);
     
-    if (!searchResults || searchResults.length === 0) {
+    if (!searchResults) {
       return res.status(404).json({ 
         success: false, 
         message: 'Không tìm thấy thuốc nào phù hợp' 
       });
     }
     
+    // Trả về toàn bộ kết quả tìm kiếm, bao gồm products, keywords và categories
     return res.status(200).json({
       success: true,
       data: searchResults,

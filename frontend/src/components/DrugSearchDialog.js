@@ -89,16 +89,32 @@ const DrugSearchDialog = ({ open, onClose, onSelectDrug }) => {
       } else {
         // Tìm kiếm thuốc Long Châu
         const response = await searchLongChauProducts(keyword);
-        if (response.data && response.data.products && Array.isArray(response.data.products)) {
-          setLongChauResults(response.data.products);
+        console.log('Kết quả tìm kiếm Long Châu:', response);
+        
+        // Kiểm tra cấu trúc dữ liệu trả về
+        if (response && Array.isArray(response)) {
+          setLongChauResults(response);
+        } else if (response && response.products && Array.isArray(response.products)) {
+          // Xử lý dữ liệu để đảm bảo không có đối tượng trực tiếp trong JSX
+          const processedProducts = response.products.map(product => {
+            // Xử lý trường price nếu là đối tượng
+            if (typeof product.price === 'object' && product.price !== null) {
+              return {
+                ...product,
+                priceFormatted: product.price.price ? `${product.price.price} ${product.price.currencySymbol || 'đ'}` : 'Không có giá'
+              };
+            }
+            return product;
+          });
+          setLongChauResults(processedProducts);
         } else {
           setLongChauResults([]);
           setError('Không tìm thấy kết quả nào');
         }
       }
-    } catch (err) {
-      console.error('Lỗi khi tìm kiếm thuốc:', err);
-      setError('Đã xảy ra lỗi khi tìm kiếm. Vui lòng thử lại sau.');
+    } catch (error) {
+      console.error('Lỗi khi tìm kiếm:', error);
+      setError(error.message || 'Đã xảy ra lỗi khi tìm kiếm');
     } finally {
       setLoading(false);
     }
@@ -128,15 +144,26 @@ const DrugSearchDialog = ({ open, onClose, onSelectDrug }) => {
 
   // Xử lý khi chọn thuốc Long Châu
   const handleSelectLongChauDrug = (drug) => {
+    console.log('Chi tiết thuốc Long Châu:', drug);
+    
+    // Xử lý các trường dữ liệu có thể là đối tượng
+    const formatPrice = (price) => {
+      if (typeof price === 'object' && price !== null) {
+        return price.price ? `${price.price} ${price.currencySymbol || 'đ'}` : 'N/A';
+      }
+      return price || 'N/A';
+    };
+    
     onSelectDrug({
       source: 'longchau',
-      brand_name: drug.name || 'N/A',
-      generic_name: drug.name || 'N/A',
-      active_ingredient: drug.ingredient || 'N/A',
-      indications_and_usage: drug.uses || 'N/A',
-      warnings: drug.warnings || 'N/A',
-      dosage_and_administration: drug.dosage || 'N/A',
-      adverse_reactions: drug.sideEffects || 'N/A'
+      brand_name: drug.name || drug.productName || 'N/A',
+      generic_name: drug.name || drug.productName || 'N/A',
+      active_ingredient: drug.ingredient || drug.activeIngredient || drug.description || 'N/A',
+      indications_and_usage: drug.uses || drug.indication || drug.description || 'N/A',
+      warnings: drug.warnings || drug.contraindication || 'N/A',
+      dosage_and_administration: drug.dosage || drug.administration || 'N/A',
+      adverse_reactions: drug.sideEffects || drug.adverseReactions || 'N/A',
+      price: formatPrice(drug.price)
     });
     onClose();
   };
@@ -269,15 +296,18 @@ const DrugSearchDialog = ({ open, onClose, onSelectDrug }) => {
                       <LocalPharmacyIcon color="secondary" />
                     </ListItemIcon>
                     <ListItemText
-                      primary={drug.name || 'Không có tên'}
+                      primary={drug.name || drug.productName || 'Không có tên'}
                       secondary={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="body2" color="text.secondary" noWrap>
-                            {drug.price || 'Không có giá'}
+                            {drug.priceFormatted || 
+                              (typeof drug.price === 'object' 
+                                ? (drug.price.price ? `${drug.price.price} ${drug.price.currencySymbol || 'đ'}` : 'Không có giá') 
+                                : (drug.price || drug.priceFormat || 'Không có giá'))}
                           </Typography>
-                          {drug.manufacturer && (
+                          {(drug.manufacturer || drug.brand) && (
                             <Typography variant="body2" color="text.secondary" noWrap>
-                              • {drug.manufacturer}
+                              • {drug.manufacturer || drug.brand}
                             </Typography>
                           )}
                         </Box>

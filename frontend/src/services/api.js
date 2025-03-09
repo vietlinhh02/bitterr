@@ -199,6 +199,7 @@ export const searchLongChauProducts = async (keyword) => {
     // Kiểm tra cache trước
     const cachedData = checkCache(cacheKey, 300000); // Cache 5 phút
     if (cachedData) {
+      console.log('Trả về dữ liệu từ cache cho từ khóa:', keyword);
       return cachedData;
     }
     
@@ -209,8 +210,11 @@ export const searchLongChauProducts = async (keyword) => {
     
     if (response.data && response.data.success) {
       // Lưu kết quả vào cache
-      saveCache(cacheKey, response.data.data);
-      return response.data.data;
+      const searchResults = response.data.data;
+      saveCache(cacheKey, searchResults);
+      
+      // Trả về kết quả tìm kiếm
+      return searchResults;
     } else {
       throw new Error(response.data?.message || 'Không thể tìm kiếm sản phẩm');
     }

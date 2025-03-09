@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import CustomContainer from './common/CustomContainer';
 import { 
   Container, 
   Paper, 
@@ -543,15 +542,14 @@ const ChatWithAI = () => {
   };
 
   return (
-    <CustomContainer maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
       <Paper 
-        elevation={0} 
+        elevation={3} 
         sx={{ 
-          p: 0, 
-          borderRadius: 3,
-          height: 'calc(100vh - 180px)',
           display: 'flex',
           flexDirection: 'column',
+          height: 'calc(100vh - 140px)',
+          borderRadius: 3,
           overflow: 'hidden'
         }}
       >
@@ -1038,132 +1036,64 @@ const ChatWithAI = () => {
           <div ref={chatEndRef} />
         </Box>
 
-        {/* Suggested Questions */}
-        {drugInfo && (
-          <Box 
-            sx={{ 
-              p: 2, 
-              borderTop: '1px solid rgba(0,0,0,0.08)',
-              bgcolor: 'background.paper',
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 1
-            }}
-          >
-            <Typography variant="body2" color="text.secondary" sx={{ mr: 1, alignSelf: 'center' }}>
-              Câu hỏi gợi ý:
-            </Typography>
-            {suggestedQuestions.map((question, index) => (
-              <Chip
-                key={index}
-                label={question}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSuggestedQuestionClick(question);
-                }}
-                variant="outlined"
-                color="primary"
-                clickable
-                size="small"
-              />
-            ))}
-          </Box>
-        )}
-
         {/* Input Area */}
         <Box 
           sx={{ 
             p: 2, 
-            borderTop: '1px solid rgba(0,0,0,0.08)',
-            bgcolor: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2
+            bgcolor: 'background.paper',
+            borderTop: '1px solid rgba(0,0,0,0.08)'
           }}
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          onMouseUp={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
         >
-          {!drugInfo ? (
+          {drugInfo && (
             <>
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<HistoryIcon />}
-                onClick={handleOpenChatHistory}
-                sx={{ mr: 1 }}
-              >
-                Lịch sử chat
-              </Button>
-              <Button 
-                variant="contained" 
-                color="primary" 
-                startIcon={<AddIcon />}
-                onClick={() => handleNewChat(true)}
-                fullWidth
-              >
-                Tạo cuộc trò chuyện mới
-              </Button>
-            </>
-          ) : (
-            <>
-              <TextField
-                fullWidth
-                variant="outlined"
-                placeholder={drugInfo ? "Nhập câu hỏi của bạn..." : "Vui lòng chọn thuốc trước khi đặt câu hỏi"}
-                value={userInput}
-                onChange={(e) => setUserInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                disabled={!drugInfo || loading}
-                multiline
-                maxRows={4}
-                size="medium"
-                onClick={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                onMouseUp={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
-                onTouchEnd={(e) => e.stopPropagation()}
-                sx={{ 
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 3,
-                    bgcolor: '#f5f7f9'
-                  }
-                }}
-              />
-              <Button
-                variant="contained"
-                color="primary"
-                endIcon={<SendIcon />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSendQuestion();
-                }}
-                disabled={!drugInfo || !userInput.trim() || loading}
-                sx={{ 
-                  height: 56, 
-                  borderRadius: 3,
-                  px: 3
-                }}
-              >
-                Gửi
-              </Button>
+              {/* Suggested Questions */}
+              <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {suggestedQuestions.map((question, index) => (
+                  <Chip
+                    key={index}
+                    label={question}
+                    onClick={() => handleSuggestedQuestionClick(question)}
+                    color="primary"
+                    variant="outlined"
+                    sx={{ cursor: 'pointer' }}
+                  />
+                ))}
+              </Box>
+              
+              {/* Input Field */}
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Nhập câu hỏi của bạn..."
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  disabled={loading}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 3,
+                    }
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSendQuestion}
+                  disabled={loading || !userInput.trim()}
+                  sx={{ borderRadius: 3, px: 3 }}
+                >
+                  {loading ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    <SendIcon />
+                  )}
+                </Button>
+              </Box>
             </>
           )}
         </Box>
       </Paper>
-
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
-          {error}
-        </Alert>
-      </Snackbar>
 
       {/* Dialog tìm kiếm thuốc */}
       <DrugSearchDialog 
@@ -1171,7 +1101,15 @@ const ChatWithAI = () => {
         onClose={handleCloseDrugSearchDialog}
         onSelectDrug={handleDrugSelected}
       />
-    </CustomContainer>
+
+      {/* Snackbar thông báo */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        message={error}
+      />
+    </Container>
   );
 };
 
