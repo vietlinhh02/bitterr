@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { 
   Container, 
   Typography, 
@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import { searchLongChauProducts } from '../services/api';
+import { searchLongChauProducts, saveLongChauSearchHistory } from '../services/api';
 
 // Hàm debounce để trì hoãn việc gọi hàm
 const debounce = (func, delay) => {
@@ -38,6 +38,7 @@ const debounce = (func, delay) => {
 
 const LongChauSearch = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [keyword, setKeyword] = useState('');
   const [searchResults, setSearchResults] = useState({
     keywords: [],
@@ -49,12 +50,25 @@ const LongChauSearch = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [lastSearchedKeyword, setLastSearchedKeyword] = useState('');
 
+  // Kiểm tra xem có dữ liệu tìm kiếm từ lịch sử không
+  useEffect(() => {
+    if (location.state?.searchKeyword) {
+      setKeyword(location.state.searchKeyword);
+      performSearch(location.state.searchKeyword);
+    }
+  }, [location.state]);
+
   // Sử dụng useCallback để tạo hàm tìm kiếm có thể được debounce
-  const performSearch = useCallback(async (searchKeyword) => {
-    if (!searchKeyword.trim() || searchKeyword === lastSearchedKeyword) return;
+  const performSearch = async (searchKeyword) => {
+    if (!searchKeyword.trim()) return;
+    
+    // Nếu từ khóa tìm kiếm giống với lần tìm kiếm trước, không cần tìm lại
+    if (searchKeyword === lastSearchedKeyword && searchResults.products && searchResults.products.length > 0) {
+      return;
+    }
     
     setLoading(true);
-    setError(null);
+    setLastSearchedKeyword(searchKeyword);
     
     try {
       const data = await searchLongChauProducts(searchKeyword);
@@ -72,9 +86,19 @@ const LongChauSearch = () => {
         setSearchResults(data);
       }
       
-      setLastSearchedKeyword(searchKeyword);
+      // Lưu lịch sử tìm kiếm
+      try {
+        await saveLongChauSearchHistory({
+          keyword: searchKeyword,
+          searchType: 'name',
+          resultCount: Array.isArray(data) ? data.length : (data.products ? data.products.length : 0)
+        });
+        console.log('Đã lưu lịch sử tìm kiếm Long Châu');
+      } catch (saveError) {
+        console.error('Lỗi khi lưu lịch sử tìm kiếm Long Châu:', saveError);
+      }
     } catch (err) {
-      console.error('Lỗi khi tìm kiếm:', err);
+      console.error('Lỗi khi tìm kiếm sản phẩm Long Châu:', err);
       if (err.message === 'Đang có quá nhiều request, vui lòng thử lại sau.') {
         setError('Đang có quá nhiều yêu cầu. Vui lòng đợi một lát và thử lại.');
       } else {
@@ -84,14 +108,16 @@ const LongChauSearch = () => {
     } finally {
       setLoading(false);
     }
-  }, [lastSearchedKeyword]);
+  };
 
   // Tạo phiên bản debounce của hàm tìm kiếm
   const debouncedSearch = useCallback(
     debounce((searchKeyword) => {
-      performSearch(searchKeyword);
-    }, 500), // Trì hoãn 500ms
-    [performSearch]
+      if (searchKeyword.trim() && searchKeyword !== lastSearchedKeyword) {
+        performSearch(searchKeyword);
+      }
+    }, 500),
+    [lastSearchedKeyword]
   );
 
   // Gọi hàm tìm kiếm khi người dùng nhập

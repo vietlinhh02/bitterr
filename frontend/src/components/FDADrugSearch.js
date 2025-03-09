@@ -40,6 +40,8 @@ function FDADrugSearch() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [showSelectDrugMessage, setShowSelectDrugMessage] = useState(false);
+  const [lastSearchedKeyword, setLastSearchedKeyword] = useState('');
+  const [lastSearchType, setLastSearchType] = useState('');
 
   // Kiểm tra xem có dữ liệu tìm kiếm từ lịch sử không
   useEffect(() => {
@@ -63,7 +65,15 @@ function FDADrugSearch() {
       return;
     }
 
+    // Nếu từ khóa và loại tìm kiếm giống với lần tìm kiếm trước, không cần tìm lại
+    if (searchKeyword === lastSearchedKeyword && type === lastSearchType && drugs.length > 0) {
+      return;
+    }
+
     setLoading(true);
+    setLastSearchedKeyword(searchKeyword);
+    setLastSearchType(type);
+    
     try {
       let response;
       if (type === 'name') {

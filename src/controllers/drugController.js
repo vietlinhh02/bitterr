@@ -53,7 +53,7 @@ const getDrugSearchHistory = async (req, res) => {
 // Thêm hàm lưu lịch sử tìm kiếm thuốc
 const saveDrugSearchHistory = async (req, res) => {
   try {
-    const { keyword, searchType, resultCount } = req.body;
+    const { keyword, searchType, resultCount, source } = req.body;
     
     if (!keyword) {
       return res.status(400).json({ success: false, message: 'Từ khóa tìm kiếm là bắt buộc' });
@@ -62,25 +62,53 @@ const saveDrugSearchHistory = async (req, res) => {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ success: false, message: 'Bạn cần đăng nhập để lưu lịch sử tìm kiếm' });
     }
-    
-    const newSearch = new DrugSearch({
-      userId: req.user.id,
-      query: searchType === 'ingredients' ? `ingredients:${keyword}` : keyword,
-      searchType: searchType || 'name',
-      resultCount: resultCount || 0,
-      timestamp: new Date()
+
+    const userId = req.user.id;
+    const query = searchType === 'ingredients' ? `ingredients:${keyword}` : keyword;
+    const searchSource = source || 'fda';
+
+    // Kiểm tra xem đã có lịch sử tìm kiếm tương tự chưa (cùng người dùng, cùng từ khóa, cùng loại tìm kiếm, cùng nguồn)
+    const existingSearch = await DrugSearch.findOne({
+      userId,
+      query,
+      source: searchSource
     });
-    
-    await newSearch.save();
+
+    let searchHistory;
+
+    if (existingSearch) {
+      // Nếu đã tồn tại, cập nhật thời gian và số kết quả
+      existingSearch.timestamp = new Date();
+      existingSearch.resultCount = resultCount || 0;
+      await existingSearch.save();
+      searchHistory = existingSearch;
+    } else {
+      // Nếu chưa tồn tại, tạo mới
+      const newSearch = new DrugSearch({
+        userId,
+        query,
+        searchType: searchType || 'name',
+        resultCount: resultCount || 0,
+        source: searchSource,
+        timestamp: new Date()
+      });
+      
+      await newSearch.save();
+      searchHistory = newSearch;
+    }
     
     return res.status(201).json({ 
       success: true, 
       message: 'Đã lưu lịch sử tìm kiếm thành công',
-      searchHistory: newSearch
+      searchHistory
     });
   } catch (error) {
-    console.error('Error saving drug search history:', error);
-    return res.status(500).json({ success: false, message: 'Lỗi server khi lưu lịch sử tìm kiếm' });
+    console.error('Lỗi khi lưu lịch sử tìm kiếm:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Đã xảy ra lỗi khi lưu lịch sử tìm kiếm',
+      error: error.message
+    });
   }
 };
 

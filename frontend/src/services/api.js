@@ -91,6 +91,12 @@ export const getDrugSearchHistory = () => API.get('/drug/search-history');
 // API lưu lịch sử tìm kiếm thuốc
 export const saveDrugSearchHistory = (searchData) => API.post('/drug/save-search-history', searchData);
 
+// API lưu lịch sử tìm kiếm Long Châu
+export const saveLongChauSearchHistory = (searchData) => API.post('/drug/save-search-history', {
+  ...searchData,
+  source: 'longchau'
+});
+
 // API xóa một mục trong lịch sử tìm kiếm thuốc
 export const deleteDrugSearchHistoryItem = (searchId) => API.delete(`/drug/search-history/${searchId}`);
 
