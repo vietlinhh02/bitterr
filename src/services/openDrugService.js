@@ -88,7 +88,7 @@ const searchDrug = async (queries) => {
         const apiConfig = getFDAApiConfig();
         
         // Tạo URL với API key
-        const url = `${apiConfig.baseURL}/drug/label.json`;
+        const url = `${apiConfig.baseURL}/drug/label.json?api_key=${apiConfig.params.api_key}`;
 
         for (const query of queries) {
             const searchQuery = `openfda.generic_name:"${query}" OR openfda.brand_name:"${query}"`;
