@@ -1,6 +1,24 @@
 // drug-app/backend/src/services/openDrugService.js
 const axios = require('axios');
 require('dotenv').config();
+
+// Cấu hình API key
+const getFDAApiConfig = () => {
+  const apiKey = process.env.DRUG_API_KEY;
+  
+  // Kiểm tra xem API key có tồn tại không
+  if (!apiKey) {
+    console.warn('FDA API key is not set. API calls may be rate limited.');
+    return { baseURL: 'https://api.fda.gov', params: {} };
+  }
+  
+  // Trả về cấu hình với API key
+  return {
+    baseURL: 'https://api.fda.gov',
+    params: { api_key: apiKey }
+  };
+};
+
 // Thêm hàm mới để tìm kiếm thuốc theo nhiều thành phần
 const searchDrugByIngredients = async (ingredients) => {
     try {
@@ -8,10 +26,24 @@ const searchDrugByIngredients = async (ingredients) => {
         const ingredientQueries = ingredients.map(ingredient => 
             `openfda.active_ingredient:"${ingredient}"`
         );
-        const drugapikey = process.env.DRUG_API_KEY;
         const searchQuery = ingredientQueries.join(' OR ');
         const encodedSearchQuery = encodeURIComponent(searchQuery);
-        const response = await axios.get(`https://api.fda.gov/drug/label.json?api_key=${drugapikey}&search=${encodedSearchQuery}&limit=10`);
+        
+        // Lấy cấu hình API
+        const apiConfig = getFDAApiConfig();
+        
+        // Tạo URL với API key
+        const url = `${apiConfig.baseURL}/drug/label.json`;
+        
+        // Tạo params với API key và các tham số khác
+        const params = {
+          ...apiConfig.params,
+          search: encodedSearchQuery,
+          limit: 10
+        };
+        
+        // Gọi API
+        const response = await axios.get(url, { params });
 
         if (response.data && response.data.results && response.data.results.length > 0) {
             const results = response.data.results;
@@ -51,11 +83,25 @@ const searchDrugByIngredients = async (ingredients) => {
 const searchDrug = async (queries) => {
     try {
         const allResults = [];
+        
+        // Lấy cấu hình API
+        const apiConfig = getFDAApiConfig();
+        
+        // Tạo URL với API key
+        const url = `${apiConfig.baseURL}/drug/label.json`;
 
         for (const query of queries) {
             const searchQuery = `openfda.generic_name:"${query}" OR openfda.brand_name:"${query}"`;
-            const encodedSearchQuery = encodeURIComponent(searchQuery);
-            const response = await axios.get(`https://api.fda.gov/drug/label.json?api_key=${drugapikey}&search=${encodedSearchQuery}&limit=1`);
+            
+            // Tạo params với API key và các tham số khác
+            const params = {
+              ...apiConfig.params,
+              search: searchQuery,
+              limit: 5
+            };
+            
+            // Gọi API
+            const response = await axios.get(url, { params });
 
             if (response.data && response.data.results && response.data.results.length > 0) {
                 const result = response.data.results[0];
