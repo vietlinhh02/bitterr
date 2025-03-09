@@ -19,6 +19,7 @@ import ImageDrugDetection from './components/ImageDrugDetection';
 import LongChauSearch from './components/LongChauSearch';
 import LongChauProductDetail from './components/LongChauProductDetail';
 import AllFeatures from './components/AllFeatures';
+import NotFound from './components/NotFound';
 
 // Footer Pages
 import Blog from './pages/footer/Blog';
@@ -249,22 +250,7 @@ function App() {
               <Route path="/privacy" element={<Privacy />} />
               
               {/* Route mặc định khi không tìm thấy */}
-              <Route path="*" element={
-                <div>
-                  <Typography variant="h4" align="center" sx={{ mt: 4 }}>
-                    Không tìm thấy trang
-                  </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                    <Button 
-                      variant="contained" 
-                      component={Link} 
-                      to="/"
-                    >
-                      Quay về trang chủ
-                    </Button>
-                  </Box>
-                </div>
-              } />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </StopPropagationWrapper>
         </Router>

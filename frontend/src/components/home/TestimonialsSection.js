@@ -24,7 +24,7 @@ function TestimonialsSection() {
     {
       name: 'Trần Thảo Lan',
       role: 'Người dùng',
-      content: ' Nà ná na na anh Viết Linh. Cảm ơn anh Viết Linh đã làm ứng dụng tuyệt vời này . Em sẽ nhớ anh Viết Linh suốt đời.',  
+      content: ' Nà ná na na anh Viết Linh. Cảm ơn anh Viết Linh đã làm ứng dụng tuyệt vời này. Em sẽ nhớ anh Viết Linh suốt đời.',  
       avatar: '../uploads/avatars/IMG_20240823_011643.png',
       rating: 5
     },

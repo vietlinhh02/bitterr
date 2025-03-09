@@ -1,6 +1,6 @@
 // drug-app/backend/src/services/openDrugService.js
 const axios = require('axios');
-
+require('dotenv').config();
 // Thêm hàm mới để tìm kiếm thuốc theo nhiều thành phần
 const searchDrugByIngredients = async (ingredients) => {
     try {
@@ -8,10 +8,10 @@ const searchDrugByIngredients = async (ingredients) => {
         const ingredientQueries = ingredients.map(ingredient => 
             `openfda.active_ingredient:"${ingredient}"`
         );
-        
+        const drugapikey = process.env.DRUG_API_KEY;
         const searchQuery = ingredientQueries.join(' OR ');
         const encodedSearchQuery = encodeURIComponent(searchQuery);
-        const response = await axios.get(`https://api.fda.gov/drug/label.json?search=${encodedSearchQuery}&limit=10`);
+        const response = await axios.get(`https://api.fda.gov/drug/label.json?api_key=${drugapikey}&search=${encodedSearchQuery}&limit=10`);
 
         if (response.data && response.data.results && response.data.results.length > 0) {
             const results = response.data.results;
@@ -55,7 +55,7 @@ const searchDrug = async (queries) => {
         for (const query of queries) {
             const searchQuery = `openfda.generic_name:"${query}" OR openfda.brand_name:"${query}"`;
             const encodedSearchQuery = encodeURIComponent(searchQuery);
-            const response = await axios.get(`https://api.fda.gov/drug/label.json?search=${encodedSearchQuery}&limit=1`);
+            const response = await axios.get(`https://api.fda.gov/drug/label.json?api_key=${drugapikey}&search=${encodedSearchQuery}&limit=1`);
 
             if (response.data && response.data.results && response.data.results.length > 0) {
                 const result = response.data.results[0];

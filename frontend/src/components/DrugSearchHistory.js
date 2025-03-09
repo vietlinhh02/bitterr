@@ -224,7 +224,7 @@ function DrugSearchHistory() {
                     />
                   </TableCell>
                   <TableCell>{item.resultCount}</TableCell>
-                  <TableCell>{formatDate(item.timestamp)}</TableCell>
+                  <TableCell>{formatDate(item.timestamp).toUpperCase()}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Button 
