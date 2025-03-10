@@ -84,7 +84,7 @@ function Login() {
       if (response.data.success) {
         localStorage.setItem('token', response.data.token);
         updateUser(response.data.user);
-        navigate('/features');
+        navigate('/');
       }
     } catch (error) {
       console.error('Login error:', error);

@@ -147,15 +147,15 @@ function App() {
               <Route path="/" element={<Home />} />
               
               {/* Trang đăng nhập và đăng ký */}
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<Login redirectPath="/" />} />
               <Route path="/register" element={<Register />} />
               
               {/* Trang tổng hợp tính năng */}
               <Route 
-                path="/features" 
+                path="/" 
                 element={
                   <ProtectedRoute>
-                    <AllFeatures />
+                    <Home />
                   </ProtectedRoute>
                 } 
               />
@@ -270,4 +270,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
