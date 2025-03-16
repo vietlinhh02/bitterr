@@ -1,32 +1,37 @@
 # BiiterNCKH - Ứng Dụng Tra Cứu Thông Tin Thuốc Thông Minh
 
-## Tổng Quan
-BiiterNCKH là một ứng dụng web hiện đại được thiết kế để cung cấp thông tin thuốc chính xác và dễ tiếp cận cho người dùng Việt Nam. Ứng dụng kết hợp dữ liệu từ nhiều nguồn uy tín và công nghệ AI tiên tiến để mang đến trải nghiệm tra cứu thuốc tốt nhất.
+BiiterNCKH là ứng dụng tra cứu thông tin thuốc thông minh, giúp người dùng tiếp cận thông tin chính xác từ nguồn dữ liệu đáng tin cậy như FDA và Long Châu.
 
-## Tính Năng Chính
-- 🔍 **Tra cứu thuốc FDA**: Tìm kiếm thông tin chi tiết về thuốc từ cơ sở dữ liệu FDA
-- 🖼️ **Nhận diện thuốc từ ảnh**: Sử dụng AI để nhận diện thuốc từ hình ảnh
-- 🏪 **Tìm kiếm sản phẩm Long Châu**: Tra cứu thông tin sản phẩm từ nhà thuốc Long Châu
-- 💬 **Chat với AI**: Tương tác với AI để nhận thông tin về thuốc và tư vấn sức khỏe
-- 👤 **Quản lý tài khoản**: Đăng ký, đăng nhập và quản lý thông tin cá nhân
-- 📱 **Thiết kế đáp ứng**: Giao diện tối ưu trên mọi thiết bị
+## 🌟 Tính Năng Chính
+
+- **Tìm kiếm thuốc FDA**: Tra cứu thông tin thuốc từ cơ sở dữ liệu FDA.
+- **Nhận diện thuốc từ ảnh**: Tải lên ảnh thuốc để nhận diện thông tin thuốc.
+- **Tìm kiếm sản phẩm Long Châu**: Tra cứu thông tin thuốc từ nhà thuốc Long Châu.
+- **Chat với AI**: Tương tác với AI để hỏi đáp về thuốc.
+- **Tìm kiếm sự kiện thuốc**: Tra cứu các sự kiện liên quan đến thuốc.
+- **Quản lý hồ sơ người dùng**: Đăng ký, đăng nhập, và quản lý hồ sơ người dùng.
 
 ## 🛠️ Công Nghệ Sử Dụng
-- **Frontend:** React.js, Material-UI, React Router
-- **Backend:** Node.js, Express.js
-- **Cơ sở dữ liệu:** MongoDB
-- **AI & ML:** TensorFlow, OpenAI API
-- **Xác thực:** JWT (JSON Web Tokens)
-- **API:** RESTful API, GraphQL
-- **Triển khai:** Docker, AWS
+
+### Backend
+- Node.js với Express.js
+- MongoDB với Mongoose ODM
+- JWT cho xác thực
+- OpenAI API cho AI Chat
+- Google Cloud Vision API cho nhận diện ảnh
+
+### Frontend
+- React.js
+- Material-UI (MUI) cho giao diện người dùng
+- Axios cho HTTP requests
+- React Router cho định tuyến
 
 ## 📥 Cài Đặt
 
 ### Yêu Cầu Hệ Thống
-- Node.js (v14.0.0 trở lên)
-- npm hoặc yarn
-- MongoDB (v4.0 trở lên)
-- Python 3.8+ (cho các mô hình ML)
+- Node.js v16+
+- MongoDB v4.4+
+- NPM v7+
 
 ### Hướng Dẫn Cài Đặt
 1. **Sao chép kho lưu trữ**
@@ -52,87 +57,57 @@ cp .env.example .env
 ```
 Chỉnh sửa tệp `.env` với cấu hình của bạn, bao gồm:
 - Thông tin kết nối MongoDB
-- API keys (OpenAI, FDA, v.v.)
+- API keys (OpenAI, Google Cloud Vision, v.v.)
 - Cấu hình JWT
-- Cổng máy chủ
 
-4. **Chạy ứng dụng**
+4. **Khởi chạy ứng dụng trong môi trường phát triển**
 ```bash
-# Chạy backend và frontend cùng lúc (development)
+# Khởi chạy backend
 npm run dev
 
-# Hoặc chạy riêng
-# Backend
-npm run server
-
-# Frontend
-npm run client
+# Khởi chạy frontend (trong terminal khác)
+cd frontend
+npm start
 ```
 
-## 📂 Cấu Trúc Dự Án
-```
-bitterr/
-├── frontend/                # Mã nguồn frontend
-│   ├── public/              # Tài nguyên tĩnh
-│   └── src/                 # Mã nguồn React
-│       ├── components/      # Các component UI
-│       │   ├── common/      # Component dùng chung
-│       │   └── home/        # Component trang chủ
-│       ├── contexts/        # React contexts
-│       ├── pages/           # Các trang
-│       │   └── footer/      # Trang footer
-│       └── services/        # Dịch vụ API
-├── src/                     # Mã nguồn backend
-│   ├── controllers/         # Xử lý logic
-│   ├── models/              # Mô hình dữ liệu
-│   ├── routes/              # Định tuyến API
-│   ├── middleware/          # Middleware
-│   └── utils/               # Tiện ích
-├── ml_models/               # Mô hình machine learning
-├── uploads/                 # Thư mục lưu trữ tệp tải lên
-├── .env                     # Biến môi trường
-└── package.json             # Cấu hình npm
+5. **Truy cập ứng dụng**
+Mở trình duyệt và truy cập `http://localhost:3000`
+
+## 🚀 Triển Khai
+
+Xem hướng dẫn chi tiết về cách triển khai ứng dụng trong [DEPLOYMENT.md](DEPLOYMENT.md).
+
+## 🧪 Kiểm Thử
+
+```bash
+# Chạy kiểm thử backend
+npm test
+
+# Chạy kiểm thử frontend
+cd frontend
+npm test
 ```
 
-## 📱 Trang và Tính Năng
+## 📊 API Documentation
 
-### Trang Chính
-- **Trang chủ**: Giới thiệu tổng quan về ứng dụng
-- **Đăng nhập/Đăng ký**: Quản lý tài khoản người dùng
-
-### Tính Năng Chính
-- **Tra cứu thuốc FDA**: Tìm kiếm và xem thông tin chi tiết về thuốc
-- **Nhận diện thuốc từ ảnh**: Tải lên hình ảnh để nhận diện thuốc
-- **Tìm kiếm Long Châu**: Tra cứu sản phẩm từ nhà thuốc Long Châu
-- **Chat với AI**: Tương tác với AI để nhận thông tin và tư vấn
-
-### Trang Thông Tin
-- **Blog**: Bài viết về kiến thức y dược
-- **Cơ sở dữ liệu**: Thông tin về nguồn dữ liệu thuốc
-- **Hướng dẫn sử dụng**: Hướng dẫn chi tiết về cách sử dụng ứng dụng
-- **FAQ**: Câu hỏi thường gặp
-- **Về chúng tôi**: Thông tin về công ty và đội ngũ
-- **Liên hệ**: Form liên hệ và thông tin liên lạc
-- **Điều khoản sử dụng**: Điều khoản pháp lý
-- **Chính sách bảo mật**: Thông tin về cách xử lý dữ liệu người dùng
+Tài liệu API đầy đủ có sẵn sau khi khởi chạy ứng dụng tại `http://localhost:5000/api-docs`.
 
 ## 🤝 Đóng Góp
+
+Chúng tôi hoan nghênh mọi đóng góp. Vui lòng làm theo các bước sau:
+
 1. Fork dự án
 2. Tạo nhánh tính năng (`git checkout -b feature/amazing-feature`)
-3. Commit thay đổi (`git commit -m 'Add some amazing feature'`)
+3. Commit các thay đổi (`git commit -m 'Add some amazing feature'`)
 4. Push lên nhánh (`git push origin feature/amazing-feature`)
 5. Mở Pull Request
 
-## 📄 Giấy Phép
-Phân phối theo Giấy phép MIT. Xem `LICENSE` để biết thêm thông tin.
+## 📜 Giấy Phép
+
+Dự án này được cấp phép theo giấy phép MIT - xem file [LICENSE](LICENSE) để biết thêm chi tiết.
 
 ## 📞 Liên Hệ
-- Email: support@biiterr.com
-- Website: [www.biiterr.com](https://www.biiterr.com)
-- Địa chỉ: 123 Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh
 
-## 🙏 Lời Cảm Ơn
-- FDA cho cơ sở dữ liệu thuốc
-- Long Châu cho dữ liệu sản phẩm
-- OpenAI cho API ChatGPT
-- Cộng đồng mã nguồn mở cho các thư viện và công cụ
+- Email: support@bitterr.com
+- Website: [https://bitterr.com](https://bitterr.com)
+- Hotline: 1900-xxxx

@@ -263,4 +263,11 @@ export const uploadAvatar = (formData) => {
   });
 };
 
+// API để xử lý thuốc yêu thích
+export const addFavoriteDrug = (drugData) => API.post('/favorites', drugData);
+
+export const getFavoriteDrugs = () => API.get('/favorites');
+
+export const removeFavoriteDrug = (favoriteId) => API.delete(`/favorites/${favoriteId}`);
+
 export default API;

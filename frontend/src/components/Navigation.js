@@ -27,7 +27,8 @@ import {
   LocalPharmacy as LocalPharmacyIcon,
   Home as HomeIcon,
   Apps as AppsIcon,
-  Warning as WarningIcon
+  Warning as WarningIcon,
+  Favorite as FavoriteIcon
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
@@ -177,6 +178,16 @@ function Navigation() {
                       <HistoryIcon fontSize="small" sx={{ mr: 1 }} />
                       Lịch sử tìm kiếm
                     </MenuItem>
+                    
+                    <MenuItem 
+                      component={Link} 
+                      to="/favorites" 
+                      onClick={handleClose}
+                    >
+                      <FavoriteIcon fontSize="small" sx={{ mr: 1 }} />
+                      Thuốc yêu thích
+                    </MenuItem>
+                    
                     <MenuItem 
                       component={Link} 
                       to="/chat" 
@@ -420,4 +431,4 @@ function Navigation() {
   );
 }
 
-export default Navigation; 
+export default Navigation;

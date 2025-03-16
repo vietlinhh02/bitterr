@@ -69,7 +69,7 @@ function ImageDrugDetection() {
     }
   };
 
-  const handleUpload = async () => {
+  const handleUpload = React.useCallback(async () => {
     if (!selectedFile) {
       setError('Vui lòng chọn một file ảnh');
       setOpenSnackbar(true);
@@ -146,7 +146,7 @@ function ImageDrugDetection() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedFile, previewUrl]);
 
   const handleClear = () => {
     setSelectedFile(null);
@@ -213,6 +213,17 @@ function ImageDrugDetection() {
     }
     return `${price.toLocaleString('vi-VN')}đ`;
   };
+
+  // Thêm useMemo để tránh tính toán lại khi component render lại
+  const filteredFDAResults = React.useMemo(() => {
+    if (!results || !results.fdaData) return [];
+    return results.fdaData;
+  }, [results]);
+
+  const filteredLongChauResults = React.useMemo(() => {
+    if (!results || !results.longChauData) return [];
+    return results.longChauData;
+  }, [results]);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -338,7 +349,7 @@ function ImageDrugDetection() {
                       </Typography>
                       
                       <List sx={{ bgcolor: 'background.paper', borderRadius: 1, mb: 4 }}>
-                        {results.fdaData.map((drug, index) => (
+                        {filteredFDAResults.map((drug, index) => (
                           <Card key={index} sx={{ mb: 2, borderRadius: 2 }}>
                             <CardContent>
                               <Typography variant="h6" color="primary">
@@ -382,7 +393,7 @@ function ImageDrugDetection() {
                       </Typography>
                       
                       <List sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
-                        {results.longChauData.map((drug, index) => (
+                        {filteredLongChauResults.map((drug, index) => (
                           <Card key={index} sx={{ mb: 2, borderRadius: 2 }}>
                             <CardContent>
                               <Box sx={{ display: 'flex', gap: 2 }}>
@@ -535,4 +546,4 @@ function ImageDrugDetection() {
   );
 }
 
-export default ImageDrugDetection; 
+export default ImageDrugDetection;

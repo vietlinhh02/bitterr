@@ -133,11 +133,16 @@ const deleteDrugSearchHistoryItem = async (req, res) => {
     
     return res.status(200).json({ 
       success: true, 
-      message: 'Đã xóa mục lịch sử tìm kiếm thành công' 
+      message: 'Đã xóa mục lịch sử tìm kiếm thành công',
+      deletedItem
     });
   } catch (error) {
-    console.error('Error deleting drug search history item:', error);
-    return res.status(500).json({ success: false, message: 'Lỗi server khi xóa lịch sử tìm kiếm' });
+    console.error('Lỗi khi xóa mục lịch sử tìm kiếm:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Đã xảy ra lỗi khi xóa mục lịch sử tìm kiếm',
+      error: error.message
+    });
   }
 };
 

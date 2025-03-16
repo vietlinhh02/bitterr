@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { 
   Card, 
@@ -31,10 +31,12 @@ import {
   Info as InfoIcon,
   Assignment as AssignmentIcon,
   Translate as TranslateIcon,
-  ContentCopy as ContentCopyIcon
+  ContentCopy as ContentCopyIcon,
+  Favorite as FavoriteIcon,
+  FavoriteBorder as FavoriteBorderIcon
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
-import { translateDrugContent } from '../services/api';
+import { translateDrugContent, addFavoriteDrug, getFavoriteDrugs } from '../services/api';
 
 // Danh sách ngôn ngữ hỗ trợ
 const languages = [
@@ -62,8 +64,14 @@ function FDADrugDetail() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteId, setFavoriteId] = useState(null);
 
   console.log('Drug detail data:', drugData);
+
+  useEffect(() => {
+    checkIfFavorite();
+  }, [drugData]);
 
   if (!drugData) {
     return (
@@ -186,6 +194,59 @@ function FDADrugDetail() {
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
+  };
+
+  const checkIfFavorite = async () => {
+    if (!drugData || !drugData.product_ndc) return;
+    
+    try {
+      const response = await getFavoriteDrugs();
+      if (response.data && response.data.success) {
+        const favorites = response.data.favoriteDrugs;
+        const favorite = favorites.find(fav => 
+          fav.drugInfo.product_ndc === drugData.product_ndc
+        );
+        
+        if (favorite) {
+          setIsFavorite(true);
+          setFavoriteId(favorite._id);
+        } else {
+          setIsFavorite(false);
+          setFavoriteId(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!drugData) return;
+    
+    try {
+      if (!isFavorite) {
+        await addFavoriteDrug({
+          drugName: drugData.openfda?.brand_name?.[0] || drugData.openfda?.generic_name?.[0] || 'Không có tên',
+          genericName: drugData.openfda?.generic_name?.[0] || '',
+          brandName: drugData.openfda?.brand_name?.[0] || '',
+          drugInfo: drugData,
+          source: 'fda'
+        });
+        setIsFavorite(true);
+        setSnackbarMessage('Đã thêm thuốc vào danh sách yêu thích');
+      } else {
+        // Implement removeFavoriteDrug here when available
+        // await removeFavoriteDrug(favoriteId);
+        // setIsFavorite(false);
+        // setSnackbarMessage('Đã xóa thuốc khỏi danh sách yêu thích');
+        setSnackbarMessage('Chức năng xóa yêu thích đang được phát triển');
+      }
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      setSnackbarMessage('Không thể thay đổi trạng thái yêu thích');
+      setSnackbarOpen(true);
+    }
   };
 
   const renderSection = (title, content, sectionId, isWarning = false, icon = null) => {
@@ -315,6 +376,13 @@ function FDADrugDetail() {
           <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }}>
             {drugData.brand_name || drugData.generic_name}
           </Typography>
+          <IconButton 
+            color="error" 
+            onClick={handleToggleFavorite}
+            sx={{ ml: 2 }}
+          >
+            {isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+          </IconButton>
         </Box>
         
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2, mb: 3 }}>
@@ -485,4 +553,4 @@ function FDADrugDetail() {
   );
 }
 
-export default FDADrugDetail; 
+export default FDADrugDetail;

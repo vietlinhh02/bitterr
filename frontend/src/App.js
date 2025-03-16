@@ -21,6 +21,7 @@ import LongChauProductDetail from './components/LongChauProductDetail';
 import AllFeatures from './components/AllFeatures';
 import NotFound from './components/NotFound';
 import DrugEventsSearch from './components/DrugEventsSearch';
+import FavoriteDrugs from './components/FavoriteDrugs';
 
 // Footer Pages
 import Blog from './pages/footer/Blog';
@@ -236,6 +237,16 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <LongChauSearch />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Trang thuốc yêu thích */}
+              <Route 
+                path="/favorites" 
+                element={
+                  <ProtectedRoute>
+                    <FavoriteDrugs />
                   </ProtectedRoute>
                 } 
               />
