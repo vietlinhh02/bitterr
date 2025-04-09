@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Container, 
   Paper, 
@@ -59,24 +59,116 @@ function UserProfile() {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  
+  // Tham chiếu để lưu thông tin người dùng trong session
+  const isInitialMount = useRef(true);
+  const cacheKey = 'userProfileCache';
 
   // Lấy thông tin người dùng khi component được mount
   useEffect(() => {
-    fetchUserProfile();
+    // Kiểm tra xem có dữ liệu cache không
+    const cachedData = sessionStorage.getItem(cacheKey);
+    
+    if (cachedData) {
+      try {
+        const parsedData = JSON.parse(cachedData);
+        setUser(parsedData.user);
+        setFormData({
+          username: parsedData.formData.username || '',
+          email: parsedData.formData.email || ''
+        });
+        setLoading(false);
+        console.log('Đã khôi phục dữ liệu từ cache');
+      } catch (error) {
+        console.error('Lỗi khi phân tích JSON từ cache:', error);
+        fetchUserProfile();
+      }
+    } else {
+      // Không có cache, tải dữ liệu mới
+      fetchUserProfile();
+    }
+    
+    isInitialMount.current = false;
+    
+    // Cleanup: Lưu cache khi component unmount
+    return () => {
+      if (user && formData) {
+        const cacheData = {
+          user: user,
+          formData: formData,
+          timestamp: new Date().getTime()
+        };
+        sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        console.log('Đã lưu dữ liệu vào cache khi unmount');
+      }
+    };
   }, []);
+
+  // Cập nhật cache khi dữ liệu thay đổi
+  useEffect(() => {
+    if (!isInitialMount.current && user && formData) {
+      const cacheData = {
+        user: user,
+        formData: formData,
+        timestamp: new Date().getTime()
+      };
+      sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
+    }
+  }, [user, formData]);
+
+  // Thêm event listener để lưu cache khi người dùng rời khỏi trang
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (user && formData) {
+        const cacheData = {
+          user: user,
+          formData: formData,
+          timestamp: new Date().getTime()
+        };
+        sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [user, formData]);
 
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
       const response = await getUserProfile();
-      console.log('User profile:', response.data);
       
       if (response.data && response.data.user) {
-        setUser(response.data.user);
+        // Thiết lập đường dẫn đầy đủ cho avatar
+        let userData = {...response.data.user};
+        
+        // Nếu đường dẫn bắt đầu bằng "/", thêm base URL
+        if (userData.avatar && userData.avatar.startsWith('/')) {
+          userData.avatar = `http://localhost:5000${userData.avatar}`;
+        }
+        
+        setUser(userData);
+        // Cập nhật context user
+        updateUser(userData);
+        
         setFormData({
-          username: response.data.user.username || '',
-          email: response.data.user.email || ''
+          username: userData.username || '',
+          email: userData.email || ''
         });
+        
+        // Lưu dữ liệu mới vào cache
+        const cacheData = {
+          user: userData,
+          formData: {
+            username: userData.username || '',
+            email: userData.email || ''
+          },
+          timestamp: new Date().getTime()
+        };
+        sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -96,10 +188,23 @@ function UserProfile() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
+    const updatedFormData = {
       ...formData,
       [name]: value
-    });
+    };
+    
+    setFormData(updatedFormData);
+    
+    // Cập nhật cache dữ liệu form khi người dùng nhập
+    if (user) {
+      const currentCache = JSON.parse(sessionStorage.getItem(cacheKey) || '{}');
+      const updatedCache = {
+        ...currentCache,
+        formData: updatedFormData,
+        timestamp: new Date().getTime()
+      };
+      sessionStorage.setItem(cacheKey, JSON.stringify(updatedCache));
+    }
   };
 
   const handlePasswordChange = (e) => {
@@ -162,28 +267,43 @@ function UserProfile() {
       const response = await updateUserProfile(formData);
       
       if (response.data && response.data.user) {
-        setUser(response.data.user);
-        // Cập nhật thông tin người dùng trong localStorage
+        const updatedUser = {
+          ...response.data.user,
+          avatar: user?.avatar // Giữ lại avatar hiện tại
+        };
+        
+        setUser(updatedUser);
+        
+        // Cập nhật thông tin người dùng trong localStorage và cache
         const userData = JSON.parse(localStorage.getItem('user') || '{}');
-        localStorage.setItem('user', JSON.stringify({
+        const updatedUserData = {
           ...userData,
           username: response.data.user.username,
           email: response.data.user.email
-        }));
+        };
+        
+        localStorage.setItem('user', JSON.stringify(updatedUserData));
+        
+        // Cập nhật context user
+        updateUser(updatedUserData);
         
         setSnackbar({
           open: true,
           message: 'Cập nhật thông tin thành công',
           severity: 'success'
         });
+        
+        // Cập nhật cache
+        const cacheData = {
+          user: updatedUser,
+          formData: formData,
+          timestamp: new Date().getTime()
+        };
+        sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      let errorMessage = 'Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại sau.';
-      
-      if (error.response && error.response.data && error.response.data.message) {
-        errorMessage = error.response.data.message;
-      }
+      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin.';
       
       setSnackbar({
         open: true,
@@ -222,11 +342,7 @@ function UserProfile() {
       });
     } catch (error) {
       console.error('Error changing password:', error);
-      let errorMessage = 'Đã xảy ra lỗi khi đổi mật khẩu. Vui lòng thử lại sau.';
-      
-      if (error.response && error.response.data && error.response.data.message) {
-        errorMessage = error.response.data.message;
-      }
+      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi đổi mật khẩu.';
       
       setSnackbar({
         open: true,
@@ -237,18 +353,18 @@ function UserProfile() {
       setSaving(false);
     }
   };
-
+  
   const handleCloseSnackbar = () => {
     setSnackbar({
       ...snackbar,
       open: false
     });
   };
-
+  
   const handleAvatarClick = () => {
     setAvatarDialog(true);
   };
-
+  
   const handleAvatarChange = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -260,7 +376,7 @@ function UserProfile() {
       reader.readAsDataURL(file);
     }
   };
-
+  
   const handleAvatarUpload = async () => {
     if (!avatarFile) return;
 
@@ -272,9 +388,37 @@ function UserProfile() {
       const response = await uploadAvatar(formData);
       
       if (response.data && response.data.user) {
-        setUser(response.data.user);
-        // Cập nhật thông tin user trong context
-        updateUser(response.data.user);
+        // Thiết lập đường dẫn đầy đủ cho avatar
+        let fullAvatarUrl = response.data.user.avatar;
+        
+        // Nếu đường dẫn bắt đầu bằng "/", thêm base URL
+        if (fullAvatarUrl && fullAvatarUrl.startsWith('/')) {
+          fullAvatarUrl = `http://localhost:5000${fullAvatarUrl}`;
+        }
+        
+        // Cập nhật user với URL đầy đủ
+        const updatedUserData = {
+          ...response.data.user,
+          avatar: fullAvatarUrl
+        };
+        
+        setUser(updatedUserData);
+        updateUser(updatedUserData);
+
+        // Force refresh avatar bằng cách thêm timestamp
+        const timestampedAvatarUrl = `${fullAvatarUrl}?t=${new Date().getTime()}`;
+        
+        const finalUserData = {...updatedUserData, avatar: timestampedAvatarUrl};
+        updateUser(finalUserData);
+        
+        // Cập nhật cache với người dùng đã cập nhật
+        const currentCache = JSON.parse(sessionStorage.getItem(cacheKey) || '{}');
+        const updatedCache = {
+          ...currentCache,
+          user: finalUserData,
+          timestamp: new Date().getTime()
+        };
+        sessionStorage.setItem(cacheKey, JSON.stringify(updatedCache));
       }
 
       setSnackbar({
@@ -296,13 +440,13 @@ function UserProfile() {
       setUploadingAvatar(false);
     }
   };
-
+  
   const handleCloseAvatarDialog = () => {
     setAvatarDialog(false);
     setAvatarPreview(null);
     setAvatarFile(null);
   };
-
+  
   if (loading) {
     return (
       <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
@@ -330,7 +474,7 @@ function UserProfile() {
         >
           <Box sx={{ position: 'relative' }}>
             <Avatar 
-              src={user?.avatar}
+              src={user?.avatar ? `${user.avatar}?t=${new Date().getTime()}` : undefined}
               sx={{ 
                 bgcolor: 'white', 
                 color: 'primary.main',
@@ -340,9 +484,9 @@ function UserProfile() {
             >
               {user?.username ? user.username.charAt(0).toUpperCase() : <PersonIcon sx={{ fontSize: 40 }} />}
             </Avatar>
-            <IconButton
-              sx={{
-                position: 'absolute',
+            <IconButton 
+              sx={{ 
+                position: 'absolute', 
                 right: -8,
                 bottom: -8,
                 bgcolor: 'secondary.main',
@@ -501,7 +645,7 @@ function UserProfile() {
           <DialogContent>
             <Box sx={{ textAlign: 'center', py: 2 }}>
               <Avatar
-                src={avatarPreview || user?.avatar}
+                src={avatarPreview || (user?.avatar ? `${user.avatar}?t=${new Date().getTime()}` : undefined)}
                 sx={{
                   width: 120,
                   height: 120,

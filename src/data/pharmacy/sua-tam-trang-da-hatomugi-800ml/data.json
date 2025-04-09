@@ -1,21 +1,38 @@
 {
   "name": "Sữa Tắm HATOMUGI Hỗ Trợ Làm Sáng Da (chai 800ml)",
   "price": "140.000 ₫/Chai",
+  "originalPrice": "175.000 ₫",
+  "discount": "Giảm 20%",
   "sku": "P21162",
   "brand": "Hatomugi",
+  "details": {
+    "fullName": "REIHAKU HATOMUGI BODY SOAP",
+    "category": "Sữa tắm",
+    "purpose": "Sữa tắm giúp dưỡng ẩm và làm sáng da",
+    "manufacturer": "Kumano",
+    "specification": "800ml",
+    "notice": "Mọi thông tin trên đây chỉ mang tính chất tham khảo. Đọc kỹ hướng dẫn sử dụng trước khi dùng"
+  },
+  "likes": null,
+  "sold": null,
   "images": [
     "https://production-cdn.pharmacity.io/digital/1080x1080/plain/e-com/images/ecommerce/20241130033955-1-P21162_1.png?versionId=AoA79lwDbQL.PzhmpGnqeeefWX19iChC",
     "https://production-cdn.pharmacity.io/digital/1080x1080/plain/e-com/images/ecommerce/P21162_1.png"
   ],
   "description": "Sữa tắm trắng da Hatomugi là một sản phẩm chăm sóc da được thiết kế để làm sạch da đồng thời giúp làm sáng và cải thiện tình trạng da. Được chiết xuất từ hạt ý dĩ, sản phẩm này có tác dụng làm mềm da và cung cấp độ ẩm cần thiết.",
+  "moTaHtml": "<div class=\"pmc-content-html [&amp;_a:not(.ignore-css_a)]:text-hyperLink max-w-[calc(100vw-32px)] overflow-auto md:w-[calc(var(--width-container)-312px-48px)] md:max-w-none\"><div class=\"flex-shrink-0 flex flex-col relative items-end\">\n<div>\n<div class=\"pt-0\">\n<div class=\"gizmo-bot-avatar flex h-8 w-8 items-center justify-center overflow-hidden rounded-full\">&nbsp;</div>\n</div>\n</div>\n</div>\n<div class=\"group/conversation-turn relative flex w-full min-w-0 flex-col agent-turn\">\n<div class=\"flex-col gap-1 md:gap-3\">\n<div class=\"flex flex-grow flex-col max-w-full\">\n<div class=\"min-h-[20px] text-message flex w-full flex-col items-end gap-2 whitespace-pre-wrap break-words [.text-message+&amp;]:mt-5 overflow-x-auto\" dir=\"auto\" data-message-author-role=\"assistant\" data-message-id=\"9ebb8c10-87d7-4d98-8d10-1fef01b4b493\">\n<div class=\"flex w-full flex-col gap-1 empty:hidden first:pt-[3px]\">\n<div class=\"markdown prose w-full break-words dark:prose-invert dark\">\n<h2>Sữa tắm trắng da Hatomugi là gì?</h2>\n<p>Sữa tắm trắng da Hatomugi là một sản phẩm chăm sóc da được thiết kế để làm sạch da đồng thời giúp làm sáng và cải thiện tình trạng da. Được chiết xuất từ hạt ý dĩ, sản phẩm này có tác dụng làm mềm da và cung cấp độ ẩm cần thiết.</p>\n</div>\n</div>\n</div>\n</div>\n</div>\n</div></div>",
+  "thanhPhanHtml": "<div class=\"pmc-content-html [&amp;_a:not(.ignore-css_a)]:text-hyperLink max-w-[calc(100vw-32px)] overflow-auto md:w-[calc(var(--width-container)-312px-48px)] md:max-w-none\"><h2>Thành phần Sữa tắm trắng da Hatomugi</h2>\n<ul>\n<li><strong>Chiết xuất hạt ý dĩ</strong>: giúp làm sáng da và cải thiện độ ẩm.</li>\n<li><strong>Tinh chất lô hội</strong>: làm dịu và cung cấp độ ẩm cho da.</li>\n<li><strong>Vitamin E</strong>: chống oxy hóa và bảo vệ da khỏi tác hại của môi trường.</li>\n</ul></div>",
   "ingredients": [
     "Chiết xuất hạt ý dĩ: giúp làm sáng da và cải thiện độ ẩm.",
     "Tinh chất lô hội: làm dịu và cung cấp độ ẩm cho da.",
     "Vitamin E: chống oxy hóa và bảo vệ da khỏi tác hại của môi trường."
   ],
+  "chiDinhHtml": "<div class=\"pmc-content-html [&amp;_a:not(.ignore-css_a)]:text-hyperLink max-w-[calc(100vw-32px)] overflow-auto md:w-[calc(var(--width-container)-312px-48px)] md:max-w-none\"><h2>Công dụng của Sữa tắm trắng da Hatomugi</h2>\n<p>Sữa tắm trắng da Hatomugi giúp làm sạch da, cung cấp độ ẩm và làm sáng da. Sản phẩm cũng hỗ trợ cải thiện tình trạng da không đều màu và làm mềm da.</p>\n<h3>Chỉ định</h3>\n<p>Sản phẩm được chỉ định cho những ai muốn làm sáng da, cải thiện tình trạng da không đều màu, và cung cấp độ ẩm cho da.</p></div>",
   "usage": [],
+  "huongDanHtml": "<div class=\"pmc-content-html [&amp;_a:not(.ignore-css_a)]:text-hyperLink max-w-[calc(100vw-32px)] overflow-auto md:w-[calc(var(--width-container)-312px-48px)] md:max-w-none\"><h2>Cách sử dụng Sữa tắm trắng da Hatomugi</h2>\n<h3>Cách dùng</h3>\n<p>Làm ướt cơ thể, lấy một lượng sữa tắm vừa đủ, thoa đều lên cơ thể và massage nhẹ nhàng. Sau đó, rửa sạch với nước.</p>\n<h3>Liều dùng</h3>\n<p>Sử dụng 1-2 lần mỗi ngày, tùy thuộc vào nhu cầu và tình trạng da của mỗi người.</p></div>",
   "usageInstructions": [],
   "usageMethod": "Not found",
+  "thanTrongHtml": "<div class=\"pmc-content-html [&amp;_a:not(.ignore-css_a)]:text-hyperLink max-w-[calc(100vw-32px)] overflow-auto md:w-[calc(var(--width-container)-312px-48px)] md:max-w-none\"><h2>Tác dụng phụ Sữa tắm trắng da Hatomugi</h2>\n<p>Sữa tắm trắng da Hatomugi thường ít gây tác dụng phụ. Tuy nhiên, nếu xuất hiện dấu hiệu kích ứng như đỏ da, ngứa hoặc nổi mẩn, nên ngừng sử dụng và tham khảo ý kiến bác sĩ.</p><h2>Lưu ý</h2>\n<h3>Thận trọng khi dùng</h3>\n<ul>\n<li><strong>Sử dụng cho phụ nữ có thai và cho con bú</strong>: Không có thông tin cụ thể về sự an toàn cho phụ nữ có thai và cho con bú. Nên tham khảo ý kiến bác sĩ trước khi sử dụng.</li>\n<li><strong>Tác động của sản phẩm lên khả năng lái xe và vận hành máy móc</strong>: Không ảnh hưởng đến khả năng lái xe và vận hành máy móc.</li>\n</ul>\n<h3>Tương tác</h3>\n<p>Hiện không có thông tin về sự tương tác của sản phẩm với các loại thuốc khác.</p>\n<h3>Chống chỉ định</h3>\n<p>Chống chỉ định với những người có tiền sử dị ứng hoặc mẫn cảm với bất kỳ thành phần nào của sản phẩm.</p></div>",
   "sideEffects": [
     "Sử dụng cho phụ nữ có thai và cho con bú: Không có thông tin cụ thể về sự an toàn cho phụ nữ có thai và cho con bú. Nên tham khảo ý kiến bác sĩ trước khi sử dụng.",
     "Tác động của sản phẩm lên khả năng lái xe và vận hành máy móc: Không ảnh hưởng đến khả năng lái xe và vận hành máy móc."
@@ -24,5 +41,7 @@
     "Sử dụng cho phụ nữ có thai và cho con bú: Không có thông tin cụ thể về sự an toàn cho phụ nữ có thai và cho con bú. Nên tham khảo ý kiến bác sĩ trước khi sử dụng.",
     "Tác động của sản phẩm lên khả năng lái xe và vận hành máy móc: Không ảnh hưởng đến khả năng lái xe và vận hành máy móc."
   ],
-  "contraindications": []
+  "contraindications": [],
+  "thongTinSanXuatHtml": "<div class=\"pmc-content-html [&amp;_a:not(.ignore-css_a)]:text-hyperLink max-w-[calc(100vw-32px)] overflow-auto md:w-[calc(var(--width-container)-312px-48px)] md:max-w-none\"><h2>Thông tin sản xuất</h2>\n<ul>\n<li><strong>Bảo quản</strong>: Để sản phẩm ở nơi khô ráo, thoáng mát và tránh ánh nắng trực tiếp.</li>\n<li><strong>Đóng gói</strong>: Chai 800ml.</li>\n<li><strong>Thương hiệu</strong>: Hatomugi.</li>\n<li><strong>Nơi sản xuất</strong>: Nhật Bản.</li>\n</ul></div>",
+  "cauHoiThuongGapHtml": "<div class=\"pmc-content-html [&amp;_a:not(.ignore-css_a)]:text-hyperLink max-w-[calc(100vw-32px)] overflow-auto md:w-[calc(var(--width-container)-312px-48px)] md:max-w-none\"><h2>Câu hỏi thường gặp</h2>\n<h3>Sữa tắm trắng da Hatomugi có phù hợp cho da nhạy cảm không?</h3>\n<p>Sữa tắm trắng da Hatomugi có chứa các thành phần tự nhiên và nhẹ nhàng, nên thường an toàn cho da nhạy cảm. Tuy nhiên, nếu bạn có làn da rất nhạy cảm, nên thử sản phẩm trên một diện tích nhỏ trước khi sử dụng toàn thân.</p>\n<h3>Sữa tắm trắng da Hatomugi có thể dùng cho trẻ em không?</h3>\n<p>Sản phẩm chủ yếu được thiết kế cho người lớn. Đối với trẻ em, nên tham khảo ý kiến bác sĩ trước khi sử dụng để đảm bảo sự an toàn.</p>\n<h3>Sữa tắm trắng da Hatomugi có giúp làm trắng da nhanh chóng không?</h3>\n<p>Sữa tắm trắng da Hatomugi giúp làm sáng da và cải thiện tình trạng da không đều màu theo thời gian. Kết quả có thể khác nhau tùy thuộc vào từng người và cách sử dụng sản phẩm đều đặn.</p></div>"
 }

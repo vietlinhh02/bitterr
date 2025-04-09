@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 uploads/
+.cursor
 # Environment variables
 .env
 .env.local

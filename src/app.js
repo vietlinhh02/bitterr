@@ -4,6 +4,7 @@ const errorHandler = require('./middleware/errorHandler');
 const securityMiddleware = require('./middleware/security');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
+const path = require('path');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -24,6 +25,18 @@ securityMiddleware(app);
 // Body parser
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Phục vụ các tệp tĩnh
+// Cấu hình nghiêm ngặt hơn, chỉ cho phép truy cập vào thư mục uploads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
+  setHeaders: (res, path) => {
+    // Đặt header cụ thể cho các file hình ảnh
+    if (path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/' + path.split('.').pop());
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache 1 ngày
+    }
+  }
+}));
 
 // Logging
 if (process.env.NODE_ENV === 'development') {

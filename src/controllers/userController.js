@@ -111,8 +111,11 @@ const uploadAvatar = async (req, res) => {
 
     // Xóa avatar cũ nếu có
     if (user.avatar) {
-      const oldAvatarPath = path.join(__dirname, '../../', user.avatar);
       try {
+        const oldAvatarPath = user.avatar.startsWith('/') 
+          ? path.join(__dirname, '../..', user.avatar) 
+          : path.join(__dirname, '../../', user.avatar);
+        
         await fs.access(oldAvatarPath);
         await fs.unlink(oldAvatarPath);
       } catch (error) {
@@ -120,8 +123,9 @@ const uploadAvatar = async (req, res) => {
       }
     }
 
-    // Cập nhật đường dẫn avatar mới
-    user.avatar = req.file.path.replace(/\\/g, '/'); // Chuyển đổi dấu \ thành / cho URL
+    // Cập nhật đường dẫn avatar mới với URL tương đối cho frontend
+    const relativePath = '/uploads/avatars/' + path.basename(req.file.path);
+    user.avatar = relativePath;
     await user.save();
 
     res.json({

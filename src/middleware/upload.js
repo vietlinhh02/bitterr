@@ -1,10 +1,17 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+
+// Đảm bảo thư mục uploads tồn tại
+const uploadDir = path.join(__dirname, '../../uploads/avatars');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // Cấu hình storage cho multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/avatars'); // Thư mục lưu trữ avatar
+    cb(null, uploadDir); // Thư mục lưu trữ avatar với đường dẫn tuyệt đối
   },
   filename: function (req, file, cb) {
     // Tạo tên file duy nhất bằng cách thêm timestamp

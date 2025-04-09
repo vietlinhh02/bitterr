@@ -313,7 +313,7 @@ function Navigation() {
                         {contextUser && contextUser.avatar ? (
                           <Avatar 
                             alt={contextUser.username} 
-                            src={contextUser.avatar} 
+                            src={`${contextUser.avatar}?t=${new Date().getTime()}`} 
                             sx={{ width: 40, height: 40 }}
                           />
                         ) : (
