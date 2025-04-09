@@ -28,6 +28,26 @@ function FeaturesSection({ isLoggedIn }) {
 
   const features = [
     {
+      icon: <PhotoCameraIcon fontSize="large" sx={{ color: '#9c27b0' }} />,
+      title: 'Nhận diện thuốc từ ảnh',
+      description: 'Tải lên ảnh thuốc và nhận thông tin chi tiết về loại thuốc được nhận diện.',
+      path: '/medicine-detection',
+      requiresAuth: true,
+      color: '#e1bee7',
+      isNew: true,
+      highlight: true
+    },
+    {
+      icon: <ChatIcon fontSize="large" sx={{ color: '#ff9800' }} />,
+      title: 'Chat với AI về thuốc',
+      description: 'Đặt câu hỏi và nhận thông tin chi tiết về thuốc từ trí tuệ nhân tạo.',
+      path: '/chat',
+      requiresAuth: true,
+      color: '#ffe0b2',
+      isNew: true,
+      highlight: true
+    },
+    {
       icon: <SearchIcon fontSize="large" sx={{ color: '#2196f3' }} />,
       title: 'Tra cứu thuốc FDA',
       description: 'Tìm kiếm thông tin chi tiết về thuốc từ cơ sở dữ liệu FDA.',
@@ -37,27 +57,11 @@ function FeaturesSection({ isLoggedIn }) {
     },
     {
       icon: <LocalPharmacyIcon fontSize="large" sx={{ color: '#4caf50' }} />,
-      title: 'Tìm kiếm Long Châu',
-      description: 'Tìm kiếm sản phẩm từ nhà thuốc Long Châu.',
-      path: '/longchau-search',
+      title: 'Tìm kiếm Pharmacy',
+      description: 'Tìm kiếm sản phẩm từ các nhà thuốc trực tuyến.',
+      path: '/pharmacy-search',
       requiresAuth: true,
       color: '#c8e6c9'
-    },
-    {
-      icon: <PhotoCameraIcon fontSize="large" sx={{ color: '#9c27b0' }} />,
-      title: 'Nhận diện thuốc từ ảnh',
-      description: 'Tải lên ảnh thuốc và nhận thông tin chi tiết về loại thuốc được nhận diện.',
-      path: '/image-detection',
-      requiresAuth: true,
-      color: '#e1bee7'
-    },
-    {
-      icon: <ChatIcon fontSize="large" sx={{ color: '#ff9800' }} />,
-      title: 'Chat với AI',
-      description: 'Đặt câu hỏi và nhận thông tin chi tiết về thuốc từ trí tuệ nhân tạo.',
-      path: '/chat',
-      requiresAuth: true,
-      color: '#ffe0b2'
     },
     {
       icon: <HistoryIcon fontSize="large" sx={{ color: '#795548' }} />,
@@ -170,6 +174,23 @@ function FeaturesSection({ isLoggedIn }) {
                   >
                     {feature.icon}
                   </Avatar>
+                  {feature.isNew && (
+                    <Chip
+                      label="MỚI"
+                      size="small"
+                      sx={{
+                        position: 'absolute',
+                        top: -10,
+                        right: '30%',
+                        bgcolor: '#f44336',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '0.6rem',
+                        height: 24,
+                        border: '2px solid white'
+                      }}
+                    />
+                  )}
                 </Box>
                 
                 <CardContent sx={{ flexGrow: 1, p: 3, pt: 2, textAlign: 'center' }}>
@@ -208,13 +229,17 @@ function FeaturesSection({ isLoggedIn }) {
                       <Button 
                         size="small" 
                         endIcon={<ArrowForwardIcon />}
+                        variant={feature.highlight ? "contained" : "text"}
                         sx={{ 
                           fontSize: '0.85rem', 
-                          color: 'primary.main',
-                          '&:hover': { bgcolor: 'rgba(0, 150, 136, 0.1)' }
+                          color: feature.highlight ? 'white' : 'primary.main',
+                          bgcolor: feature.highlight ? 'primary.main' : 'transparent',
+                          '&:hover': { 
+                            bgcolor: feature.highlight ? 'primary.dark' : 'rgba(0, 150, 136, 0.1)'
+                          }
                         }}
                       >
-                        Khám phá ngay
+                        {feature.highlight ? 'Dùng ngay' : 'Khám phá ngay'}
                       </Button>
                     )}
                   </Box>

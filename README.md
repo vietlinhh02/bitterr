@@ -111,3 +111,48 @@ Dự án này được cấp phép theo giấy phép MIT - xem file [LICENSE](LI
 - Email: support@bitterr.com
 - Website: [https://bitterr.com](https://bitterr.com)
 - Hotline: 1900-xxxx
+
+## Cập nhật: Sử dụng OCR.space API 
+
+Chúng tôi đã chuyển đổi từ hệ thống OCR tự triển khai sang sử dụng OCR.space API để tăng cường độ chính xác và đơn giản hóa quy trình nhận diện văn bản từ hình ảnh thuốc.
+
+### Ưu điểm của OCR.space API:
+
+1. **Độ chính xác cao** - API được tối ưu hóa cho nhận diện văn bản đa ngôn ngữ với độ chính xác cao
+2. **Dễ tích hợp** - Không cần triển khai server Python riêng cho OCR
+3. **Hỗ trợ tiếng Việt** - Nhận diện tốt văn bản tiếng Việt từ hình ảnh
+4. **Thông tin bounding box** - Cung cấp tọa độ chính xác của từng từ được nhận diện
+5. **Tốc độ xử lý nhanh** - Giảm thời gian phản hồi cho người dùng
+
+### Cách sử dụng:
+
+1. Đăng ký API key tại [OCR.space](https://ocr.space/OCRAPI)
+2. Thêm API key vào file `.env`: `OCR_SPACE_API_KEY=your_api_key_here`
+3. API sẽ tự động được sử dụng khi người dùng tải ảnh lên
+
+## Tính năng nhận diện thuốc với Gemini AI (Mới)
+
+Chúng tôi vừa tích hợp Google Gemini AI vào hệ thống để nâng cao khả năng nhận diện thuốc từ hình ảnh. Tính năng này giúp xác định chính xác các loại thuốc, hiển thị thông tin chi tiết và định vị vị trí của chúng trong hình ảnh.
+
+### Ưu điểm so với hệ thống OCR trước đây
+
+1. **Nhận diện hình dạng thuốc** - Không chỉ đọc được văn bản, Gemini còn nhận diện được hình dạng, màu sắc và các đặc điểm của viên thuốc
+2. **Thông tin chi tiết hơn** - Cung cấp thông tin về thành phần hoạt tính, liều lượng và công dụng
+3. **Đa ngôn ngữ** - Hiểu và xử lý thông tin bằng nhiều ngôn ngữ khác nhau
+4. **Độ chính xác cao** - Dựa trên mô hình AI tiên tiến, giảm thiểu sai sót so với OCR truyền thống
+
+### Cách sử dụng:
+
+1. Đăng nhập vào hệ thống BiiterNCKH
+2. Truy cập menu "Nhận diện thuốc Gemini AI" hoặc vào đường dẫn `/gemini-detection`
+3. Tải lên hình ảnh chứa thuốc cần nhận diện
+4. Nhấn nút "Nhận diện thuốc" để bắt đầu phân tích
+5. Hệ thống sẽ hiển thị bounding box xung quanh các thuốc được nhận diện, kèm theo thông tin chi tiết
+
+### Lưu ý về API key
+
+Ứng dụng hiện sử dụng hai API key chính:
+- **OCR.space API** - Cho nhận diện văn bản từ hình ảnh
+- **Google Gemini API** - Cho phân tích và trả lời câu hỏi về thuốc
+
+Vui lòng đảm bảo rằng các API key này được cấu hình đúng trong file `.env` của ứng dụng.

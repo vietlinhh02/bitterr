@@ -7,12 +7,14 @@ const swaggerDocument = require('./swagger.json');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
-const drugRoutes = require('./routes/drugRoutes');
-const chatRoutes = require('./routes/chatRoutes');
+const fdaDrugRoutes = require('./routes/fdaDrugRoutes');
 const userRoutes = require('./routes/userRoutes');
-const detectRoutes = require('./routes/detectRoutes');
-const longChauRoutes = require('./routes/longChauRoutes');
-const favoriteDrugRoutes = require('./routes/favoriteDrugRoutes'); // Add this import
+const searchHistoryRoutes = require('./routes/searchHistoryRoutes');
+const chatRoutes = require('./routes/chatRoutes');
+const medicineDetectionRoutes = require('./routes/medicineDetectionRoutes');
+const drugEventsRoutes = require('./routes/drugEventsRoutes');
+const favoriteRoutes = require('./routes/favoriteRoutes');
+const pharmacyRoutes = require('./routes/pharmacyRoutes');
 
 const app = express();
 
@@ -33,12 +35,14 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/drug', drugRoutes);
-app.use('/api/chat', chatRoutes);
+app.use('/api/fda-drugs', fdaDrugRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/detect', detectRoutes);
-app.use('/api/longchau', longChauRoutes);
-app.use('/api/favorites', favoriteDrugRoutes); // Add this route
+app.use('/api/search-history', searchHistoryRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/medicine-detection', medicineDetectionRoutes);
+app.use('/api/drug-events', drugEventsRoutes);
+app.use('/api/favorites', favoriteRoutes);
+app.use('/api/pharmacy', pharmacyRoutes);
 
 // Homepage
 app.get('/', (req, res) => {

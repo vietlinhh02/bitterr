@@ -13,7 +13,8 @@ import {
   Box,
   Avatar,
   Tooltip,
-  Fade
+  Fade,
+  Chip
 } from '@mui/material';
 import { 
   Menu as MenuIcon,
@@ -28,7 +29,9 @@ import {
   Home as HomeIcon,
   Apps as AppsIcon,
   Warning as WarningIcon,
-  Favorite as FavoriteIcon
+  Favorite as FavoriteIcon,
+  Science as ScienceIcon,
+  CameraAlt as CameraAltIcon
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
@@ -66,22 +69,80 @@ function Navigation() {
     navigate('/login');
   };
 
+  const menuItems = [
+    {
+      text: 'Trang Chủ',
+      path: '/',
+      icon: <HomeIcon />,
+      requireAuth: false
+    },
+    {
+      text: 'Nhận Diện Thuốc',
+      path: '/medicine-detection',
+      icon: <PhotoCameraIcon />,
+      requireAuth: true,
+      highlight: true
+    },
+    {
+      text: 'Tra Cứu',
+      path: '/fda-drugs',
+      icon: <SearchIcon />,
+      requireAuth: true
+    },
+    {
+      text: 'Pharmacy',
+      path: '/pharmacy-search',
+      icon: <LocalPharmacyIcon />,
+      requireAuth: true
+    },
+    {
+      text: 'Trò Chuyện AI',
+      path: '/chat',
+      icon: <ChatIcon />,
+      requireAuth: true,
+      highlight: true
+    }
+  ];
+
+  const userMenuItems = [
+    {
+      text: 'Tài Khoản',
+      path: '/profile',
+      icon: <PersonIcon />,
+    },
+    {
+      text: 'Lịch Sử',
+      path: '/search-history',
+      icon: <HistoryIcon />,
+    },
+    {
+      text: 'Yêu Thích',
+      path: '/favorites',
+      icon: <FavoriteIcon />,
+    },
+    {
+      text: 'Sự Kiện',
+      path: '/drug-events',
+      icon: <WarningIcon />,
+    }
+  ];
+
   return (
     <AppBar position="sticky" color="primary" elevation={0} sx={{ mb: 4 }}>
       <Container maxWidth="lg">
-        <Toolbar disableGutters>
+        <Toolbar disableGutters sx={{ gap: 2 }}>
           <Typography
             variant="h6"
             noWrap
             component={Link}
             to="/"
             sx={{
-              mr: 2,
               display: { xs: 'none', md: 'flex' },
               fontWeight: 700,
               color: 'inherit',
               textDecoration: 'none',
-              flexGrow: { xs: 0, md: 1 }
+              flexGrow: 0,
+              alignItems: 'center'
             }}
           >
             <MedicalServicesIcon sx={{ mr: 1 }} />
@@ -94,7 +155,6 @@ function Navigation() {
             component={Link}
             to="/"
             sx={{
-              mr: 2,
               display: { xs: 'flex', md: 'none' },
               flexGrow: 1,
               fontWeight: 700,
@@ -133,107 +193,68 @@ function Navigation() {
                 onClose={handleClose}
                 TransitionComponent={Fade}
               >
-                <MenuItem 
-                  component={Link} 
-                  to="/" 
-                  onClick={handleClose}
-                >
-                  <HomeIcon fontSize="small" sx={{ mr: 1 }} />
-                  Trang chủ
-                </MenuItem>
+                {menuItems.map((item) => (
+                  <MenuItem 
+                    key={item.path}
+                    component={Link} 
+                    to={item.path} 
+                    onClick={handleClose}
+                    sx={{
+                      ...(item.highlight && {
+                        backgroundColor: 'rgba(0, 150, 136, 0.08)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(0, 150, 136, 0.15)',
+                        }
+                      })
+                    }}
+                  >
+                    {item.icon}
+                    <Typography noWrap sx={{ ml: 1 }}>
+                      {item.text}
+                      {item.highlight && (
+                        <Chip 
+                          size="small" 
+                          label="Mới" 
+                          color="primary" 
+                          variant="outlined"
+                          sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
+                        />
+                      )}
+                    </Typography>
+                  </MenuItem>
+                ))}
                 
-                <MenuItem 
-                  component={Link} 
-                  to="/fda-drugs" 
-                  onClick={handleClose}
-                >
-                  <SearchIcon fontSize="small" sx={{ mr: 1 }} />
-                  Tra cứu thuốc
-                </MenuItem>
-                
-                <MenuItem 
-                  component={Link} 
-                  to="/drug-events" 
-                  onClick={handleClose}
-                >
-                  <WarningIcon fontSize="small" sx={{ mr: 1 }} />
-                  Sự kiện thuốc
-                </MenuItem>
-                
-                {isLoggedIn && (
-                  <>
-                    <MenuItem 
-                      component={Link} 
-                      to="/longchau-search" 
-                      onClick={handleClose}
-                    >
-                      <LocalPharmacyIcon fontSize="small" sx={{ mr: 1 }} />
-                      Tìm kiếm Long Châu
-                    </MenuItem>
-                    <MenuItem 
-                      component={Link} 
-                      to="/search-history" 
-                      onClick={handleClose}
-                    >
-                      <HistoryIcon fontSize="small" sx={{ mr: 1 }} />
-                      Lịch sử tìm kiếm
-                    </MenuItem>
-                    
-                    <MenuItem 
-                      component={Link} 
-                      to="/favorites" 
-                      onClick={handleClose}
-                    >
-                      <FavoriteIcon fontSize="small" sx={{ mr: 1 }} />
-                      Thuốc yêu thích
-                    </MenuItem>
-                    
-                    <MenuItem 
-                      component={Link} 
-                      to="/chat" 
-                      onClick={handleClose}
-                    >
-                      <ChatIcon fontSize="small" sx={{ mr: 1 }} />
-                      Chat với AI
-                    </MenuItem>
-                    <MenuItem 
-                      component={Link} 
-                      to="/image-detection" 
-                      onClick={handleClose}
-                    >
-                      <PhotoCameraIcon fontSize="small" sx={{ mr: 1 }} />
-                      Nhận diện thuốc từ ảnh
-                    </MenuItem>
-                  </>
-                )}
+                {isLoggedIn && userMenuItems.map((item) => (
+                  <MenuItem 
+                    key={item.path}
+                    component={Link} 
+                    to={item.path} 
+                    onClick={handleClose}
+                  >
+                    {item.icon}
+                    <Typography noWrap sx={{ ml: 1 }}>
+                      {item.text}
+                    </Typography>
+                  </MenuItem>
+                ))}
                 
                 {isLoggedIn ? (
-                  [
-                    <MenuItem 
-                      key="profile" 
-                      component={Link} 
-                      to="/profile" 
-                      onClick={handleClose}
-                    >
-                      <PersonIcon fontSize="small" sx={{ mr: 1 }} />
-                      Tài khoản
-                    </MenuItem>,
-                    <MenuItem 
-                      key="logout" 
-                      onClick={handleLogout}
-                    >
-                      <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
-                      Đăng xuất
-                    </MenuItem>
-                  ]
+                  <MenuItem onClick={handleLogout}>
+                    <LogoutIcon />
+                    <Typography noWrap sx={{ ml: 1 }}>
+                      Đăng Xuất
+                    </Typography>
+                  </MenuItem>
                 ) : (
                   <MenuItem 
                     component={Link} 
                     to="/login" 
                     onClick={handleClose}
                   >
-                    <PersonIcon fontSize="small" sx={{ mr: 1 }} />
-                    Đăng nhập
+                    <PersonIcon />
+                    <Typography noWrap sx={{ ml: 1 }}>
+                      Đăng Nhập
+                    </Typography>
                   </MenuItem>
                 )}
               </Menu>
@@ -241,188 +262,123 @@ function Navigation() {
           ) : (
             <>
               <Box sx={{ 
-                display: 'flex', 
-                gap: 0.5, 
-                flexWrap: 'nowrap',
-                overflow: 'auto',
-                '&::-webkit-scrollbar': { display: 'none' },
-                msOverflowStyle: 'none',
-                scrollbarWidth: 'none'
+                display: { xs: 'none', md: 'flex' }, 
+                gap: 1,
+                ml: 'auto',
+                mr: 2,
+                alignItems: 'center'
               }}>
-                <Button 
-                  color="inherit" 
-                  component={Link} 
-                  to="/"
-                  startIcon={<HomeIcon />}
-                  sx={{ 
-                    borderRadius: 2, 
-                    px: 1.5,
-                    minWidth: 'auto',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  Trang chủ
-                </Button>
-                
-                <Button 
-                  color="inherit" 
-                  component={Link} 
-                  to="/fda-drugs"
-                  startIcon={<SearchIcon />}
-                  sx={{ 
-                    borderRadius: 2, 
-                    px: 1.5,
-                    minWidth: 'auto',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  Tra cứu
-                </Button>
-                
-                <Button 
-                  color="inherit" 
-                  component={Link} 
-                  to="/drug-events"
-                  startIcon={<WarningIcon />}
-                  sx={{ 
-                    borderRadius: 2, 
-                    px: 1.5,
-                    minWidth: 'auto',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  Sự kiện
-                </Button>
-                
-                {isLoggedIn && (
+                {menuItems.map((item) => (
+                  <Button
+                    key={item.path}
+                    color="inherit"
+                    component={Link}
+                    to={item.path}
+                    sx={{ 
+                      minWidth: 'auto',
+                      px: 1,
+                      whiteSpace: 'nowrap',
+                      fontSize: '0.875rem',
+                      ...(item.highlight && {
+                        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                        fontWeight: 'bold',
+                        '&:hover': {
+                          backgroundColor: 'rgba(255, 255, 255, 0.25)',
+                        }
+                      })
+                    }}
+                    startIcon={item.icon}
+                  >
+                    <Typography noWrap variant="button" sx={{ fontSize: 'inherit' }}>
+                      {item.text}
+                      {item.highlight && <Box component="span" sx={{ 
+                        width: '6px', 
+                        height: '6px',
+                        borderRadius: '50%',
+                        backgroundColor: '#ffeb3b',
+                        display: 'inline-block',
+                        ml: 0.5,
+                        verticalAlign: 'top'
+                      }} />}
+                    </Typography>
+                  </Button>
+                ))}
+              </Box>
+
+              <Box sx={{ flexShrink: 0 }}>
+                {isLoggedIn ? (
                   <>
-                    <Button 
-                      color="inherit" 
-                      component={Link} 
-                      to="/longchau-search"
-                      startIcon={<LocalPharmacyIcon />}
-                      sx={{ 
-                        borderRadius: 2, 
-                        px: 1.5,
-                        minWidth: 'auto',
-                        whiteSpace: 'nowrap'
+                    <Tooltip title="Tùy chọn người dùng">
+                      <IconButton onClick={handleUserMenuOpen} sx={{ p: 0 }}>
+                        {contextUser && contextUser.avatar ? (
+                          <Avatar 
+                            alt={contextUser.username} 
+                            src={contextUser.avatar} 
+                            sx={{ width: 40, height: 40 }}
+                          />
+                        ) : (
+                          <Avatar 
+                            sx={{ 
+                              width: 40, 
+                              height: 40, 
+                              bgcolor: 'primary.main',
+                              color: 'white'
+                            }}
+                          >
+                            <PersonIcon />
+                          </Avatar>
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                    <Menu
+                      sx={{ mt: '45px' }}
+                      id="menu-appbar-user"
+                      anchorEl={userMenuAnchorEl}
+                      anchorOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
                       }}
-                    >
-                      Long Châu
-                    </Button>
-                    <Button 
-                      color="inherit" 
-                      component={Link} 
-                      to="/search-history"
-                      startIcon={<HistoryIcon />}
-                      sx={{ 
-                        borderRadius: 2, 
-                        px: 1.5,
-                        minWidth: 'auto',
-                        whiteSpace: 'nowrap'
+                      keepMounted
+                      transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
                       }}
+                      open={Boolean(userMenuAnchorEl)}
+                      onClose={handleUserMenuClose}
                     >
-                      Lịch sử
-                    </Button>
-                    <Button 
-                      color="inherit" 
-                      component={Link} 
-                      to="/chat"
-                      startIcon={<ChatIcon />}
-                      sx={{ 
-                        borderRadius: 2, 
-                        px: 1.5,
-                        minWidth: 'auto',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      Chat
-                    </Button>
-                    <Button 
-                      color="inherit" 
-                      component={Link} 
-                      to="/image-detection"
-                      startIcon={<PhotoCameraIcon />}
-                      sx={{ 
-                        borderRadius: 2, 
-                        px: 1.5,
-                        minWidth: 'auto',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      Nhận diện
-                    </Button>
+                      {userMenuItems.map((item) => (
+                        <MenuItem 
+                          key={item.path}
+                          component={Link} 
+                          to={item.path} 
+                          onClick={handleUserMenuClose}
+                        >
+                          {item.icon}
+                          <Typography noWrap sx={{ ml: 1 }}>
+                            {item.text}
+                          </Typography>
+                        </MenuItem>
+                      ))}
+                      <MenuItem onClick={handleLogout}>
+                        <LogoutIcon />
+                        <Typography noWrap sx={{ ml: 1 }}>
+                          Đăng Xuất
+                        </Typography>
+                      </MenuItem>
+                    </Menu>
                   </>
+                ) : (
+                  <Button 
+                    color="inherit" 
+                    component={Link} 
+                    to="/login"
+                    startIcon={<PersonIcon />}
+                    sx={{ whiteSpace: 'nowrap' }}
+                  >
+                    Đăng Nhập
+                  </Button>
                 )}
               </Box>
-              
-              {isLoggedIn ? (
-                <Box sx={{ ml: 2 }}>
-                  <Tooltip title="Tài khoản">
-                    <IconButton onClick={handleUserMenuOpen} sx={{ p: 0 }}>
-                      <Avatar 
-                        alt={contextUser?.username || 'User'} 
-                        src={contextUser?.avatar}
-                        sx={{ 
-                          bgcolor: 'secondary.main',
-                          width: 40,
-                          height: 40
-                        }}
-                      >
-                        {contextUser?.username ? contextUser.username.charAt(0).toUpperCase() : 'U'}
-                      </Avatar>
-                    </IconButton>
-                  </Tooltip>
-                  <Menu
-                    id="menu-appbar-user"
-                    anchorEl={userMenuAnchorEl}
-                    anchorOrigin={{
-                      vertical: 'bottom',
-                      horizontal: 'right',
-                    }}
-                    keepMounted
-                    transformOrigin={{
-                      vertical: 'top',
-                      horizontal: 'right',
-                    }}
-                    open={Boolean(userMenuAnchorEl)}
-                    onClose={handleUserMenuClose}
-                    TransitionComponent={Fade}
-                  >
-                    <MenuItem 
-                      component={Link} 
-                      to="/profile" 
-                      onClick={handleUserMenuClose}
-                    >
-                      <PersonIcon fontSize="small" sx={{ mr: 1 }} />
-                      Tài khoản
-                    </MenuItem>
-                    <MenuItem onClick={handleLogout}>
-                      <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
-                      Đăng xuất
-                    </MenuItem>
-                  </Menu>
-                </Box>
-              ) : (
-                <Button 
-                  color="inherit" 
-                  component={Link} 
-                  to="/login"
-                  variant="outlined"
-                  sx={{ 
-                    ml: 2,
-                    borderRadius: 2,
-                    px: 2,
-                    borderColor: 'white',
-                    '&:hover': {
-                      borderColor: 'white',
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    }
-                  }}
-                >
-                  Đăng nhập
-                </Button>
-              )}
             </>
           )}
         </Toolbar>

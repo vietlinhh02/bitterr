@@ -27,7 +27,7 @@ import {
   MedicalServices as MedicalServicesIcon,
   LocalPharmacy as LocalPharmacyIcon
 } from '@mui/icons-material';
-import { searchFDADrugs, searchLongChauProducts } from '../services/api';
+import { searchFDADrugs } from '../services/api';
 
 // Component TabPanel để hiển thị nội dung của mỗi tab
 function TabPanel(props) {
@@ -54,7 +54,6 @@ const DrugSearchDialog = ({ open, onClose, onSelectDrug }) => {
   const [tabValue, setTabValue] = useState(0);
   const [keyword, setKeyword] = useState('');
   const [fdaResults, setFdaResults] = useState([]);
-  const [longChauResults, setLongChauResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -86,31 +85,6 @@ const DrugSearchDialog = ({ open, onClose, onSelectDrug }) => {
           setFdaResults([]);
           setError('Không tìm thấy kết quả nào');
         }
-      } else {
-        // Tìm kiếm thuốc Long Châu
-        const response = await searchLongChauProducts(keyword);
-        console.log('Kết quả tìm kiếm Long Châu:', response);
-        
-        // Kiểm tra cấu trúc dữ liệu trả về
-        if (response && Array.isArray(response)) {
-          setLongChauResults(response);
-        } else if (response && response.products && Array.isArray(response.products)) {
-          // Xử lý dữ liệu để đảm bảo không có đối tượng trực tiếp trong JSX
-          const processedProducts = response.products.map(product => {
-            // Xử lý trường price nếu là đối tượng
-            if (typeof product.price === 'object' && product.price !== null) {
-              return {
-                ...product,
-                priceFormatted: product.price.price ? `${product.price.price} ${product.price.currencySymbol || 'đ'}` : 'Không có giá'
-              };
-            }
-            return product;
-          });
-          setLongChauResults(processedProducts);
-        } else {
-          setLongChauResults([]);
-          setError('Không tìm thấy kết quả nào');
-        }
       }
     } catch (error) {
       console.error('Lỗi khi tìm kiếm:', error);
@@ -137,33 +111,11 @@ const DrugSearchDialog = ({ open, onClose, onSelectDrug }) => {
       indications_and_usage: drug.indications_and_usage || 'N/A',
       warnings: drug.warnings || 'N/A',
       dosage_and_administration: drug.dosage_and_administration || 'N/A',
-      adverse_reactions: drug.adverse_reactions || 'N/A'
-    });
-    onClose();
-  };
-
-  // Xử lý khi chọn thuốc Long Châu
-  const handleSelectLongChauDrug = (drug) => {
-    console.log('Chi tiết thuốc Long Châu:', drug);
-    
-    // Xử lý các trường dữ liệu có thể là đối tượng
-    const formatPrice = (price) => {
-      if (typeof price === 'object' && price !== null) {
-        return price.price ? `${price.price} ${price.currencySymbol || 'đ'}` : 'N/A';
-      }
-      return price || 'N/A';
-    };
-    
-    onSelectDrug({
-      source: 'longchau',
-      brand_name: drug.name || drug.productName || 'N/A',
-      generic_name: drug.name || drug.productName || 'N/A',
-      active_ingredient: drug.ingredient || drug.activeIngredient || drug.description || 'N/A',
-      indications_and_usage: drug.uses || drug.indication || drug.description || 'N/A',
-      warnings: drug.warnings || drug.contraindication || 'N/A',
-      dosage_and_administration: drug.dosage || drug.administration || 'N/A',
-      adverse_reactions: drug.sideEffects || drug.adverseReactions || 'N/A',
-      price: formatPrice(drug.price)
+      adverse_reactions: drug.adverse_reactions || 'N/A',
+      id: drug.application_number || drug.product_ndc,
+      name: drug.brand_name || drug.generic_name || 'Không có tên',
+      ingredient: drug.active_ingredient || 'Không có thông tin thành phần',
+      manufacturer: drug.manufacturer_name || 'Không xác định'
     });
     onClose();
   };
@@ -217,11 +169,6 @@ const DrugSearchDialog = ({ open, onClose, onSelectDrug }) => {
                 label="FDA" 
                 iconPosition="start"
               />
-              <Tab 
-                icon={<LocalPharmacyIcon />} 
-                label="Long Châu" 
-                iconPosition="start"
-              />
             </Tabs>
             <Button
               variant="contained"
@@ -267,54 +214,6 @@ const DrugSearchDialog = ({ open, onClose, onSelectDrug }) => {
                     />
                   </ListItem>
                   {index < fdaResults.length - 1 && <Divider component="li" />}
-                </React.Fragment>
-              ))}
-            </List>
-          ) : !loading && (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Typography color="text.secondary">
-                {keyword ? 'Không tìm thấy kết quả nào' : 'Nhập tên thuốc và nhấn Tìm kiếm'}
-              </Typography>
-            </Box>
-          )}
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={1}>
-          {longChauResults.length > 0 ? (
-            <List>
-              {longChauResults.map((drug, index) => (
-                <React.Fragment key={index}>
-                  <ListItem 
-                    button 
-                    onClick={() => handleSelectLongChauDrug(drug)}
-                    sx={{ 
-                      borderRadius: 1,
-                      '&:hover': { bgcolor: 'action.hover' }
-                    }}
-                  >
-                    <ListItemIcon>
-                      <LocalPharmacyIcon color="secondary" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={drug.name || drug.productName || 'Không có tên'}
-                      secondary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="body2" color="text.secondary" noWrap>
-                            {drug.priceFormatted || 
-                              (typeof drug.price === 'object' 
-                                ? (drug.price.price ? `${drug.price.price} ${drug.price.currencySymbol || 'đ'}` : 'Không có giá') 
-                                : (drug.price || drug.priceFormat || 'Không có giá'))}
-                          </Typography>
-                          {(drug.manufacturer || drug.brand) && (
-                            <Typography variant="body2" color="text.secondary" noWrap>
-                              • {drug.manufacturer || drug.brand}
-                            </Typography>
-                          )}
-                        </Box>
-                      }
-                    />
-                  </ListItem>
-                  {index < longChauResults.length - 1 && <Divider component="li" />}
                 </React.Fragment>
               ))}
             </List>

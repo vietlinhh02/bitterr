@@ -12,13 +12,18 @@ const chatHistoryRoutes = require('./routers/chatHistory');
 const questionSuggestionRoutes = require('./routers/questionSuggestion');
 const translateRoutes = require('./routers/translate');
 const longChauRoutes = require('./routers/longChau');
+const medicineDetectionRoutes = require('./routers/medicineDetection');
+const pharmacyRoutes = require('./routes/pharmacyRoutes');
 const path = require('path');
 
 const app = express();
 
+// Cấu hình CORS chi tiết hơn
 app.use(cors({
-  origin: "*", // Cho phép tất cả các origin
-  credentials: true // Nếu cần gửi cookie hoặc authentication headers
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 
 app.use(express.json());
@@ -35,6 +40,8 @@ app.use('/api/chat-history', chatHistoryRoutes);
 app.use('/api/question-suggestions', questionSuggestionRoutes);
 app.use('/api/translate', translateRoutes);
 app.use('/api/longchau', longChauRoutes);
+app.use('/api/medicine-detection', medicineDetectionRoutes);
+app.use('/api/pharmacy', pharmacyRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Initialize Swagger
@@ -42,7 +49,7 @@ swaggerDocs(app);
 
 connectDB();
 
-const PORT = process.env.PORT || 5000; 
+const PORT = process.env.PORT || 5050; 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

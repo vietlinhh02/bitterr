@@ -135,9 +135,95 @@ const generateQuestionSuggestions = async (drugInfo) => {
   }
 };
 
+// Hướng dẫn hệ thống cho model
+const SYSTEM_INSTRUCTION = `
+  Nhận diện và phân tích thuốc trong hình ảnh. Trả về thông tin dưới dạng JSON với các thuộc tính:
+  - name: Tên thuốc
+  - dosage: Liều lượng (nếu có)
+  - active_ingredients: Thành phần hoạt tính chính (nếu có)
+  - usage: Công dụng của thuốc (nếu có)
+  - box_2d: Tọa độ bounding box [x1, y1, x2, y2]
+  
+  Giới hạn tối đa 10 đối tượng. Không bao gồm code fencing hay masks.
+`;
+
+/**
+ * Phân tích hình ảnh thuốc sử dụng Gemini API
+ * @param {Buffer} imageBuffer - Buffer chứa dữ liệu hình ảnh
+ * @param {string} prompt - Câu lệnh cho model (tùy chọn)
+ * @returns {Promise<Object>} - Kết quả phân tích
+ */
+async function analyzeMedicineImage(imageBuffer, prompt = "Nhận diện tất cả các loại thuốc trong hình ảnh và cung cấp thông tin chi tiết.") {
+  try {
+    // Khởi tạo model Gemini 2.0 Flash
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    
+    // Chuẩn bị dữ liệu hình ảnh
+    const imagePart = {
+      inlineData: {
+        data: imageBuffer.toString('base64'),
+        mimeType: 'image/jpeg',
+      },
+    };
+
+    // Cấu hình cho model
+    const generationConfig = {
+      temperature: 0.4,
+      topP: 0.8,
+      topK: 32,
+    };
+
+    // Gọi API để phân tích hình ảnh
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }, imagePart] }],
+      generationConfig,
+      systemInstruction: SYSTEM_INSTRUCTION,
+    });
+
+    const response = result.response;
+    const text = response.text();
+    
+    // Phân tích kết quả trả về
+    try {
+      // Cố gắng parse JSON từ kết quả
+      const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      
+      // Nếu không tìm thấy JSON, trả về text nguyên bản
+      return { rawResult: text };
+    } catch (parseError) {
+      console.error('Lỗi khi parse kết quả:', parseError);
+      return { rawResult: text };
+    }
+  } catch (error) {
+    console.error('Lỗi khi phân tích hình ảnh thuốc:', error);
+    throw new Error('Không thể phân tích hình ảnh thuốc: ' + error.message);
+  }
+}
+
+/**
+ * Tìm kiếm thông tin thuốc dựa trên nhận dạng hình ảnh
+ * @param {Buffer} imageBuffer - Buffer chứa dữ liệu hình ảnh
+ * @param {string} searchQuery - Truy vấn tìm kiếm (ví dụ: "Tìm thuốc có hoạt chất paracetamol")
+ * @returns {Promise<Object>} - Kết quả tìm kiếm
+ */
+async function searchMedicineByImage(imageBuffer, searchQuery) {
+  try {
+    const prompt = `Tìm kiếm thông tin: ${searchQuery}. Chỉ trả về kết quả phù hợp với truy vấn.`;
+    return await analyzeMedicineImage(imageBuffer, prompt);
+  } catch (error) {
+    console.error('Lỗi khi tìm kiếm thuốc qua hình ảnh:', error);
+    throw new Error('Không thể tìm kiếm thuốc: ' + error.message);
+  }
+}
+
 module.exports = { 
   askGeminiWithFDA, 
   askGeminiWithOCRText,
-  generateQuestionSuggestions  // Add this to the exports
+  generateQuestionSuggestions,
+  analyzeMedicineImage,
+  searchMedicineByImage
 };
 

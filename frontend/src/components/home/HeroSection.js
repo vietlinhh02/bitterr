@@ -100,7 +100,7 @@ function HeroSection({ isLoggedIn }) {
                   size="large"
                   color="secondary"
                   component={Link}
-                  to={isLoggedIn ? "/fda-drugs" : "/login"}
+                  to={isLoggedIn ? "/medicine-detection" : "/login"}
                   sx={{ 
                     px: 4, 
                     py: 1.5,
@@ -115,9 +115,32 @@ function HeroSection({ isLoggedIn }) {
                   }}
                   endIcon={<ArrowForwardIcon />}
                 >
-                  {isLoggedIn ? "Bắt đầu ngay" : "Đăng nhập để bắt đầu"}
+                  {isLoggedIn ? "Nhận diện thuốc ngay" : "Đăng nhập để bắt đầu"}
                 </Button>
-                {!isLoggedIn && (
+                {isLoggedIn ? (
+                  <Button 
+                    variant="outlined" 
+                    size="large"
+                    component={Link}
+                    to="/chat"
+                    sx={{ 
+                      px: 4, 
+                      py: 1.5,
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      color: 'white',
+                      borderColor: 'rgba(255, 255, 255, 0.7)',
+                      borderWidth: 2,
+                      fontSize: '1.1rem',
+                      '&:hover': {
+                        borderColor: 'white',
+                        bgcolor: 'rgba(255, 255, 255, 0.1)'
+                      }
+                    }}
+                  >
+                    Bắt đầu trò chuyện
+                  </Button>
+                ) : (
                   <Button 
                     variant="outlined" 
                     size="large"

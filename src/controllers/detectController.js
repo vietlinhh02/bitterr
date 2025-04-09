@@ -6,11 +6,25 @@ const FormData = require('form-data');
 require('dotenv').config();
 const drugController = require('./drugController');
 const geminiService = require('../services/geminiService');
-
+const ocrSpaceService = require('../services/ocrSpaceService');
+const multer = require('multer');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const PYTHON_SERVER_URL = 'http://localhost:5001';
+
+// Cấu hình multer để lưu file tạm
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // Giới hạn 10MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(new Error('Chỉ hỗ trợ file PNG, JPG và JPEG'), false);
+    }
+    cb(null, true);
+  }
+}).single('image');
 
 async function searchLongChauProducts(keyword) {
     try {
@@ -44,126 +58,149 @@ async function searchLongChauProducts(keyword) {
     }
 }
 
-const detectDrugNames = async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'Không có file ảnh được upload' });
-        }
-
-        // Tạo FormData để gửi file đến Python server
-        const formData = new FormData();
-        const fileBuffer = await fs.readFile(req.file.path);
-        formData.append('image', fileBuffer, {
-            filename: req.file.originalname,
-            contentType: req.file.mimetype
+/**
+ * Xử lý tải lên ảnh và phát hiện tên thuốc
+ */
+async function detectDrugNames(req, res) {
+  try {
+    // Sử dụng middleware upload để xử lý file
+    upload(req, res, async (err) => {
+      if (err) {
+        // Xử lý lỗi từ multer
+        return res.status(400).json({
+          success: false,
+          message: `Lỗi khi tải lên file: ${err.message}`
         });
+      }
 
-        // Gửi request đến Python server
-        const pythonResponse = await axios.post(`${PYTHON_SERVER_URL}/detect/upload`, formData, {
-            headers: {
-                ...formData.getHeaders()
-            }
+      // Kiểm tra xem có file được tải lên không
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'Không tìm thấy file ảnh'
         });
+      }
 
-        // Xóa file tạm sau khi xử lý
-        await fs.unlink(req.file.path);
+      try {
+        // Phân tích ảnh bằng Gemini Vision
+        const result = await analyzeImageWithGemini(req.file.buffer);
 
-        const detectedResults = pythonResponse.data;
-
-        // Nếu có kết quả OCR
-        if (detectedResults && detectedResults.results && detectedResults.results.length > 0) {
-            // Kết hợp tất cả text đã detect
-            const detectedText = detectedResults.results
-                .map(result => result.text)
-                .join(' ');
-
-            // Tìm kiếm trong FDA trước
-            const mockReq = {
-                query: { query: detectedText },
-                user: req.user
-            };
-
-            const mockRes = {
-                statusCode: 200,
-                data: null,
-                status: function(code) {
-                    this.statusCode = code;
-                    return this;
-                },
-                json: function(data) {
-                    this.data = data;
-                    return this;
-                }
-            };
-
-            await drugController.searchDrug(mockReq, mockRes);
-            
-            // Tìm kiếm trên Long Châu
-            const longChauResults = await searchLongChauProducts(detectedText);
-
-            // Chuẩn bị response
-            const response = {
-                message: 'Kết quả tìm kiếm thuốc',
-                detectedText: detectedText,
-                ocrResults: detectedResults.results,
-            };
-
-            // Thêm dữ liệu FDA nếu có
-            if (mockRes.data && mockRes.data.fdaData && mockRes.data.fdaData.length > 0) {
-                response.fdaData = mockRes.data.fdaData;
-                response.hasFDAData = true;
-            }
-
-            // Thêm dữ liệu Long Châu nếu có
-            if (longChauResults && longChauResults.data && longChauResults.data.length > 0) {
-                response.longChauData = longChauResults.data;
-                response.hasLongChauData = true;
-            }
-
-            // Nếu không có dữ liệu từ cả hai nguồn
-            if (!response.hasFDAData && !response.hasLongChauData) {
-                return res.json({
-                    message: 'Không tìm thấy thông tin thuốc',
-                    detectedText: detectedText,
-                    ocrResults: detectedResults.results
-                });
-            }
-
-            return res.json(response);
-        }
-
-        // Nếu không detect được text
-        return res.json({
-            message: 'Không tìm thấy text trong ảnh',
-            results: []
+        return res.status(200).json({
+          success: true,
+          data: result
         });
-
-    } catch (error) {
+      } catch (error) {
         console.error('Lỗi khi detect ảnh:', error);
-        
-        // Đảm bảo xóa file tạm nếu có lỗi
-        if (req.file) {
-            await fs.unlink(req.file.path).catch(err => 
-                console.error('Lỗi khi xóa file tạm:', err)
-            );
-        }
-
-        // Trả về thông báo lỗi phù hợp
-        if (error.response) {
-            return res.status(error.response.status).json(error.response.data);
-        }
-        
-        return res.status(500).json({ 
-            message: 'Đã xảy ra lỗi khi xử lý ảnh',
-            error: error.message 
+        return res.status(500).json({
+          success: false,
+          message: `Lỗi khi phân tích ảnh: ${error.message}`
         });
-    }
-};
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi server:', error);
+    return res.status(500).json({
+      success: false,
+      message: `Lỗi server: ${error.message}`
+    });
+  }
+}
 
-// Sửa hàm askGeminiDirectly
-const askGeminiDirectly = async (ocrText, question, originalRes) => { // Nhận question
+/**
+ * Sử dụng Gemini Vision để phân tích ảnh và trích xuất thông tin thuốc
+ * @param {Buffer} imageBuffer - Buffer chứa dữ liệu ảnh
+ * @returns {Promise<Object>} - Kết quả phân tích từ Gemini
+ */
+async function analyzeImageWithGemini(imageBuffer) {
+  try {
+    console.log('Đang phân tích ảnh với Gemini Vision...');
+
+    // Chuyển đổi buffer thành định dạng base64 để gửi đến Gemini
+    const imageBase64 = imageBuffer.toString('base64');
+
+    // Khởi tạo model Gemini Vision
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+
+    // Tạo prompt chi tiết để hướng dẫn Gemini
+    const prompt = `
+    Hãy phân tích hình ảnh sản phẩm thuốc này và cung cấp các thông tin sau:
+
+    1. Tên sản phẩm thuốc
+    2. Thành phần hoạt chất chính
+    3. Công dụng/chỉ định điều trị
+    4. Liều lượng khuyến cáo (nếu có thể nhìn thấy)
+    5. Nhà sản xuất
+    6. Các lưu ý quan trọng về thuốc (nếu có)
+
+    Hãy chỉ trả về thông tin dưới dạng JSON theo cấu trúc sau:
+    {
+      "drugName": "Tên sản phẩm thuốc",
+      "activeIngredient": "Thành phần hoạt chất chính",
+      "indications": "Công dụng/chỉ định điều trị",
+      "dosage": "Liều lượng khuyến cáo",
+      "manufacturer": "Nhà sản xuất",
+      "warnings": "Các lưu ý quan trọng",
+      "confidence": <mức độ tin cậy từ 0-100>
+    }
+    
+    Nếu không thể xác định chính xác bất kỳ trường thông tin nào, hãy điền "Không xác định" vào trường đó.
+    Đối với trường confidence, hãy ước tính mức độ tin cậy của việc nhận dạng từ 0-100%.
+    `;
+
+    // Chuẩn bị yêu cầu cho Gemini Vision
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: imageBase64
+        }
+      }
+    ]);
+
+    // Lấy phản hồi từ Gemini
+    const response = result.response;
+    const responseText = response.text();
+    
+    // Trích xuất JSON từ phản hồi
     try {
-        // const question = req.body.question; // Không cần dòng này nữa
+      // Trích xuất chuỗi JSON từ phản hồi
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Không thể trích xuất JSON từ phản hồi Gemini');
+      }
+      
+      const jsonText = jsonMatch[0];
+      const drugInfo = JSON.parse(jsonText);
+      
+      console.log('Gemini đã phân tích thành công:', drugInfo.drugName);
+      return {
+        ...drugInfo,
+        rawText: responseText
+      };
+    } catch (jsonError) {
+      console.error('Lỗi khi xử lý phản hồi JSON từ Gemini:', jsonError);
+      return {
+        drugName: 'Không xác định',
+        activeIngredient: 'Không xác định',
+        indications: 'Không xác định',
+        dosage: 'Không xác định',
+        manufacturer: 'Không xác định',
+        warnings: 'Không xác định',
+        confidence: 0,
+        error: jsonError.message,
+        rawText: responseText
+      };
+    }
+  } catch (error) {
+    console.error('Lỗi khi gọi Gemini Vision API:', error);
+    throw new Error(`Không thể phân tích ảnh: ${error.message}`);
+  }
+}
+
+// Hàm hỏi Gemini về văn bản đã phát hiện
+const askGeminiDirectly = async (ocrText, question, originalRes) => { 
+    try {
         if (!question) {
           return originalRes.status(400).json({message: "Missing user question"})
         }
@@ -180,4 +217,4 @@ const askGeminiDirectly = async (ocrText, question, originalRes) => { // Nhận 
     }
 };
 
-module.exports = { detectDrugNames };
+module.exports = { detectDrugNames, askGeminiDirectly };

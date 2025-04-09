@@ -1,0 +1,101 @@
+{
+  "paths": {
+    "/api/medicine-detection/detect": {
+      "post": {
+        "tags": ["Medicine Detection"],
+        "summary": "Phân tích hình ảnh thuốc",
+        "description": "Tải lên hình ảnh thuốc và nhận diện thông tin",
+        "operationId": "detectMedicine",
+        "consumes": ["multipart/form-data"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "formData",
+            "name": "image",
+            "type": "file",
+            "required": true,
+            "description": "Hình ảnh thuốc cần phân tích"
+          },
+          {
+            "in": "formData",
+            "name": "prompt",
+            "type": "string",
+            "required": false,
+            "description": "Câu lệnh định hướng cho việc phân tích (tùy chọn)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Phân tích thành công",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean"
+                },
+                "data": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu không hợp lệ"
+          },
+          "500": {
+            "description": "Lỗi server"
+          }
+        }
+      }
+    },
+
+    "/api/medicine-detection/search": {
+      "post": {
+        "tags": ["Medicine Detection"],
+        "summary": "Tìm kiếm thuốc qua hình ảnh",
+        "description": "Tải lên hình ảnh thuốc và tìm kiếm thông tin dựa trên truy vấn",
+        "operationId": "searchMedicine",
+        "consumes": ["multipart/form-data"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "formData",
+            "name": "image",
+            "type": "file",
+            "required": true,
+            "description": "Hình ảnh thuốc cần tìm kiếm"
+          },
+          {
+            "in": "formData",
+            "name": "query",
+            "type": "string",
+            "required": true,
+            "description": "Truy vấn tìm kiếm"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tìm kiếm thành công",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean"
+                },
+                "data": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu không hợp lệ"
+          },
+          "500": {
+            "description": "Lỗi server"
+          }
+        }
+      }
+    }
+  }
+} 

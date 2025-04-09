@@ -1,9 +1,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { createTheme, ThemeProvider, CssBaseline, Typography, Box, Button } from '@mui/material';
+import { createTheme, ThemeProvider, CssBaseline, Typography, Box, Button, Container, Grid } from '@mui/material';
 import { blue, teal, grey } from '@mui/material/colors';
+import { MedicalServices as MedicalServicesIcon } from '@mui/icons-material';
 import { UserProvider } from './contexts/UserContext';
 import StopPropagationWrapper from './components/common/StopPropagationWrapper';
+import MedicineDetection from './components/MedicineDetection';
+import PharmacySearch from './components/PharmacySearch';
+import PharmacyProductDetail from './components/PharmacyProductDetail';
 
 // Components
 import Navigation from './components/Navigation';
@@ -15,13 +19,10 @@ import Register from './components/Register';
 import DrugSearchHistory from './components/DrugSearchHistory';
 import ChatWithAI from './components/ChatWithAI';
 import UserProfile from './components/UserProfile';
-import ImageDrugDetection from './components/ImageDrugDetection';
-import LongChauSearch from './components/LongChauSearch';
-import LongChauProductDetail from './components/LongChauProductDetail';
-import AllFeatures from './components/AllFeatures';
-import NotFound from './components/NotFound';
-import DrugEventsSearch from './components/DrugEventsSearch';
+//import GeminiMedicineDetection from './components/GeminiMedicineDetection';
 import FavoriteDrugs from './components/FavoriteDrugs';
+import DrugEventsSearch from './components/DrugEventsSearch';
+import Footer from './components/layout/Footer';
 
 // Footer Pages
 import Blog from './pages/footer/Blog';
@@ -32,6 +33,7 @@ import About from './pages/footer/About';
 import Contact from './pages/footer/Contact';
 import Terms from './pages/footer/Terms';
 import Privacy from './pages/footer/Privacy';
+import NotFound from './components/NotFound';
 
 // Tạo theme cho ứng dụng
 const theme = createTheme({
@@ -151,6 +153,16 @@ function App() {
               <Route path="/login" element={<Login redirectPath="/" />} />
               <Route path="/register" element={<Register />} />
               
+              {/* Trang nhận diện thuốc */}
+              <Route 
+                path="/medicine-detection" 
+                element={
+                  <ProtectedRoute>
+                    <MedicineDetection />
+                  </ProtectedRoute>
+                } 
+              />
+              
               {/* Trang tổng hợp tính năng */}
               <Route 
                 path="/" 
@@ -221,26 +233,6 @@ function App() {
                 } 
               />
               
-              {/* Trang nhận diện thuốc từ ảnh */}
-              <Route 
-                path="/image-detection" 
-                element={
-                  <ProtectedRoute>
-                    <ImageDrugDetection />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              {/* Trang tìm kiếm sản phẩm Long Châu */}
-              <Route 
-                path="/longchau-search" 
-                element={
-                  <ProtectedRoute>
-                    <LongChauSearch />
-                  </ProtectedRoute>
-                } 
-              />
-              
               {/* Trang thuốc yêu thích */}
               <Route 
                 path="/favorites" 
@@ -251,17 +243,27 @@ function App() {
                 } 
               />
               
-              {/* Trang chi tiết sản phẩm Long Châu */}
+              {/* Trang tìm kiếm thuốc Pharmacy */}
               <Route 
-                path="/longchau/product/:slug" 
+                path="/pharmacy-search" 
                 element={
                   <ProtectedRoute>
-                    <LongChauProductDetail />
+                    <PharmacySearch />
                   </ProtectedRoute>
                 } 
               />
               
-              {/* Trang footer */}
+              {/* Trang chi tiết sản phẩm Pharmacy */}
+              <Route 
+                path="/pharmacy-product/:slug" 
+                element={
+                  <ProtectedRoute>
+                    <PharmacyProductDetail />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Footer Pages */}
               <Route path="/blog" element={<Blog />} />
               <Route path="/database" element={<Database />} />
               <Route path="/guides" element={<Guides />} />
@@ -271,10 +273,11 @@ function App() {
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               
-              {/* Route mặc định khi không tìm thấy */}
+              {/* Trang 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </StopPropagationWrapper>
+          <Footer />
         </Router>
       </ThemeProvider>
     </UserProvider>

@@ -130,9 +130,7 @@ function ImageDrugDetection() {
           detectedText: response.data.detectedText,
           ocrResults: response.data.ocrResults || [],
           fdaData: response.data.fdaData || [],
-          longChauData: response.data.longChauData || [],
-          hasFDAData: response.data.hasFDAData || false,
-          hasLongChauData: response.data.hasLongChauData || false
+          hasFDAData: response.data.hasFDAData || false
         };
         setResults(processedResults);
       } else {
@@ -176,8 +174,7 @@ function ImageDrugDetection() {
       const requestData = {
         question: question,
         detectedText: results.detectedText,
-        fdaData: results.hasFDAData ? results.fdaData : [],
-        longChauData: results.hasLongChauData ? results.longChauData : []
+        fdaData: results.hasFDAData ? results.fdaData : []
       };
 
       const response = await askAIAboutDrug(requestData);
@@ -218,11 +215,6 @@ function ImageDrugDetection() {
   const filteredFDAResults = React.useMemo(() => {
     if (!results || !results.fdaData) return [];
     return results.fdaData;
-  }, [results]);
-
-  const filteredLongChauResults = React.useMemo(() => {
-    if (!results || !results.longChauData) return [];
-    return results.longChauData;
   }, [results]);
 
   return (
@@ -379,93 +371,7 @@ function ImageDrugDetection() {
                     </>
                   )}
 
-                  {/* Hiển thị kết quả Long Châu */}
-                  {results.hasLongChauData && (
-                    <>
-                      <Typography variant="h6" gutterBottom sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center',
-                        color: '#00a859',
-                        fontWeight: 'bold'
-                      }}>
-                        <LocalPharmacyIcon sx={{ mr: 1 }} />
-                        Kết quả từ Long Châu
-                      </Typography>
-                      
-                      <List sx={{ bgcolor: 'background.paper', borderRadius: 1 }}>
-                        {filteredLongChauResults.map((drug, index) => (
-                          <Card key={index} sx={{ mb: 2, borderRadius: 2 }}>
-                            <CardContent>
-                              <Box sx={{ display: 'flex', gap: 2 }}>
-                                {drug.image && (
-                                  <Box sx={{ width: 100, height: 100, flexShrink: 0 }}>
-                                    <img 
-                                      src={drug.image} 
-                                      alt={drug.name}
-                                      style={{ 
-                                        width: '100%', 
-                                        height: '100%', 
-                                        objectFit: 'contain',
-                                        borderRadius: 8
-                                      }} 
-                                    />
-                                  </Box>
-                                )}
-                                <Box sx={{ flex: 1 }}>
-                                  <Typography variant="h6" color="primary" gutterBottom>
-                                    {drug.name || 'Không có tên'}
-                                  </Typography>
-                                  
-                                  {drug.price && (
-                                    <Typography variant="body1" color="error" gutterBottom>
-                                      {formatPrice(drug.price)}
-                                    </Typography>
-                                  )}
-                                  
-                                  {drug.manufacturer && (
-                                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                                      Nhà sản xuất: {drug.manufacturer}
-                                    </Typography>
-                                  )}
-
-                                  {drug.description && (
-                                    <Typography 
-                                      variant="body2" 
-                                      color="text.secondary" 
-                                      sx={{ 
-                                        mt: 1,
-                                        display: '-webkit-box',
-                                        WebkitLineClamp: 2,
-                                        WebkitBoxOrient: 'vertical',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                      }}
-                                    >
-                                      {drug.description}
-                                    </Typography>
-                                  )}
-                                </Box>
-                              </Box>
-
-                              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined"
-                                  href={drug.url}
-                                  target="_blank"
-                                  startIcon={<MedicalServicesIcon />}
-                                >
-                                  Xem trên Long Châu
-                                </Button>
-                              </Box>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </List>
-                    </>
-                  )}
-
-                  {!results.hasFDAData && !results.hasLongChauData && (
+                  {!results.hasFDAData && (
                     <Alert severity="info">
                       Không tìm thấy thông tin thuốc. Vui lòng thử lại với ảnh khác.
                     </Alert>
@@ -486,14 +392,13 @@ function ImageDrugDetection() {
                         size="small"
                         value={question}
                         onChange={(e) => setQuestion(e.target.value)}
-                        disabled={askingQuestion || (!results.hasFDAData && !results.hasLongChauData)}
-                        helperText={(!results.hasFDAData && !results.hasLongChauData) ? 
-                          "Không có thông tin thuốc để hỏi" : ""}
+                        disabled={askingQuestion || !results.hasFDAData}
+                        helperText={!results.hasFDAData ? "Không có thông tin thuốc để hỏi" : ""}
                       />
                       <IconButton 
                         color="primary" 
                         onClick={handleAskQuestion}
-                        disabled={!question.trim() || askingQuestion || (!results.hasFDAData && !results.hasLongChauData)}
+                        disabled={!question.trim() || askingQuestion || !results.hasFDAData}
                       >
                         <SendIcon />
                       </IconButton>

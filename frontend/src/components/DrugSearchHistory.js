@@ -77,13 +77,6 @@ function DrugSearchHistory() {
           prefillSearch: true 
         } 
       });
-    } else if (source === 'longchau') {
-      navigate('/longchau-search', { 
-        state: { 
-          searchKeyword: query,
-          prefillSearch: true 
-        } 
-      });
     } else {
       navigate('/fda-drugs', { 
         state: { 
@@ -153,10 +146,7 @@ function DrugSearchHistory() {
 
   // Lọc lịch sử theo nguồn
   const filteredHistory = history.filter(item => {
-    if (tabValue === 0) return true; // Tất cả
-    if (tabValue === 1) return !item.source || item.source !== 'longchau'; // FDA
-    if (tabValue === 2) return item.source === 'longchau'; // Long Châu
-    return true;
+    return true; // Hiển thị tất cả, không cần lọc vì chỉ có FDA
   });
 
   return (
@@ -168,10 +158,8 @@ function DrugSearchHistory() {
         </Typography>
 
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-          <Tabs value={tabValue} onChange={handleTabChange} centered>
+          <Tabs value={0} centered>
             <Tab label="Tất cả" />
-            <Tab label="FDA" />
-            <Tab label="Long Châu" />
           </Tabs>
         </Box>
 
@@ -217,8 +205,8 @@ function DrugSearchHistory() {
                   </TableCell>
                   <TableCell>
                     <Chip 
-                      label={item.source === 'longchau' ? 'Long Châu' : 'FDA'} 
-                      color={item.source === 'longchau' ? 'secondary' : 'primary'} 
+                      label="FDA" 
+                      color="primary" 
                       variant="outlined" 
                       size="small" 
                     />

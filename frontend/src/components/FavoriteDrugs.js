@@ -66,9 +66,7 @@ function FavoriteDrugs() {
   };
 
   const handleViewDetails = (favorite) => {
-    if (favorite.source === 'longchau' && favorite.drugInfo.slug) {
-      navigate(`/longchau/product/${encodeURIComponent(favorite.drugInfo.slug)}`);
-    } else if (favorite.drugInfo.product_ndc) {
+    if (favorite.drugInfo.product_ndc) {
       navigate(`/fda-drugs/${favorite.drugInfo.product_ndc}`, { state: { drugData: favorite.drugInfo } });
     } else {
       showSnackbar('Không thể hiển thị chi tiết thuốc này', 'error');
@@ -137,8 +135,8 @@ function FavoriteDrugs() {
                     </Typography>
                     <Chip 
                       size="small" 
-                      label={favorite.source === 'fda' ? 'FDA' : 'Long Châu'}
-                      color={favorite.source === 'fda' ? 'primary' : 'secondary'}
+                      label="FDA"
+                      color="primary"
                     />
                   </Box>
                   
