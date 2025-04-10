@@ -1,0 +1,30 @@
+{
+  "name": "Thuốc bột Fabamox 250mg điều trị nhiễm khuẩn (hộp 12 gói)",
+  "price": "47.000 ₫/Hộp",
+  "originalPrice": "",
+  "discount": null,
+  "sku": "P14716",
+  "brand": "Pharbaco (TW1)",
+  "details": {
+    "category": "Thuốc kê đơn",
+    "hoạt_chất": "AMOXICILLIN",
+    "chỉ_định": "Điều trị nhiễm khuẩn",
+    "dạng_bào_chế": "Thuốc bột",
+    "nơi_sản_xuất": "Pharbaco (TW1)",
+    "specification": "Hộp 12 gói",
+    "notice": "Sản phẩm này chỉ bán khi có chỉ định của bác sĩ, mọi thông tin trên đây chỉ mang tính chất tham khảo. Vui lòng đọc kĩ thông tin chi tiết ở tờ hướng dẫn sử dẫn của sản phẩm."
+  },
+  "likes": null,
+  "sold": null,
+  "images": [
+    "https://production-cdn.pharmacity.io/digital/1080x1080/plain/e-com/images/ecommerce/P14716_1_l.webp",
+    "https://production-cdn.pharmacity.io/digital/1080x1080/plain/e-com/images/ecommerce/P14716_2_l.webp",
+    "https://production-cdn.pharmacity.io/digital/1080x1080/plain/e-com/images/ecommerce/P14716_3_l.webp",
+    "https://production-cdn.pharmacity.io/digital/1080x1080/plain/e-com/images/ecommerce/P14716_4_l.webp"
+  ],
+  "ingredients": [],
+  "usage": [],
+  "usageInstructions": [],
+  "usageMethod": "Not found",
+  "precautions": []
+}

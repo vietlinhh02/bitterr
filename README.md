@@ -156,3 +156,43 @@ Chúng tôi vừa tích hợp Google Gemini AI vào hệ thống để nâng cao
 - **Google Gemini API** - Cho phân tích và trả lời câu hỏi về thuốc
 
 Vui lòng đảm bảo rằng các API key này được cấu hình đúng trong file `.env` của ứng dụng.
+
+## Tính năng nhận diện viên thuốc với Machine Learning (Mới)
+
+Chúng tôi vừa tích hợp thêm khả năng nhận diện viên thuốc sử dụng mô hình Machine Learning tiên tiến. Tính năng này giúp người dùng nhận diện chính xác các loại viên thuốc thông qua hình ảnh.
+
+### Ưu điểm của mô hình ML cho nhận diện viên thuốc
+
+1. **Nhận diện chính xác viên thuốc** - Mô hình được huấn luyện đặc biệt để nhận diện viên thuốc dựa trên hình dạng, màu sắc, và đặc điểm
+2. **Hiển thị bounding box** - Đánh dấu chính xác vị trí các viên thuốc trong hình ảnh
+3. **Thông tin chi tiết** - Cung cấp tên thuốc và mức độ tin cậy của nhận diện
+4. **Tích hợp với hệ thống tìm kiếm** - Dễ dàng tìm kiếm thông tin chi tiết về thuốc sau khi nhận diện
+
+### Cách sử dụng:
+
+1. Truy cập trang "Nhận diện thuốc" (/medicine-detection)
+2. Chuyển sang tab "Viên thuốc"
+3. Tải lên hình ảnh chứa viên thuốc cần nhận diện
+4. Nhấn "Nhận diện" để bắt đầu phân tích
+5. Xem kết quả với hình ảnh có đánh dấu bounding box và thông tin thuốc
+6. Có thể nhấn "Tìm tại nhà thuốc" để tìm thuốc tương ứng
+
+### Cài đặt Python ML Server
+
+Tính năng này yêu cầu chạy Python ML Server song song với backend Node.js:
+
+```bash
+# Di chuyển đến thư mục ml_models
+cd ml_models
+
+# Cài đặt các gói Python cần thiết
+pip install -r requirements.txt
+
+# Chạy server Python ML
+python app.py
+
+# Hoặc sử dụng Node.js để khởi động
+node server.js
+```
+
+Lưu ý: Đảm bảo rằng Python server đang chạy trên port 8000 hoặc cập nhật biến môi trường `PYTHON_API_URL` trong file `.env` của backend.

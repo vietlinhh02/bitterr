@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
-const { detectMedicine, searchMedicine, saveDetectionResult } = require('../controllers/medicineDetectionController');
-const { authMiddleware } = require('../middleware/authMiddleware');
+const { detectMedicine, searchMedicine, saveDetectionResult, detectPills } = require('../controllers/medicineDetectionController');
+const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -35,6 +35,13 @@ router.post('/detect', upload.single('image'), detectMedicine);
  * @access Public
  */
 router.post('/search', upload.single('image'), searchMedicine);
+
+/**
+ * @route POST /api/medicine-detection/detect-pills
+ * @desc Phân tích hình ảnh viên thuốc sử dụng Python ML model
+ * @access Public
+ */
+router.post('/detect-pills', upload.single('image'), detectPills);
 
 /**
  * @route POST /api/medicine-detection/save-result
