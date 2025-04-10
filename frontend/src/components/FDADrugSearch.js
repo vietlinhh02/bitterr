@@ -176,14 +176,6 @@ function FDADrugSearch() {
           </Alert>
         )}
 
-        <Alert 
-          severity="info" 
-          sx={{ mb: 3, borderRadius: 2 }}
-          icon={<InfoIcon />}
-        >
-          Tính năng tìm kiếm theo thành phần đã được thay thế bằng tính năng mới <Link to="/drug-events">Tìm kiếm sự kiện thuốc</Link>
-        </Alert>
-
         <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
           <Grid item xs={12} sm={10}>
             <TextField
@@ -345,7 +337,7 @@ function FDADrugSearch() {
             Không tìm thấy kết quả nào cho "{keyword}".
           </Typography>
           <Typography variant="body2" align="center" color="text.secondary">
-            Vui lòng thử lại với từ khóa khác hoặc sử dụng tính năng <Link to="/drug-events">Tìm kiếm sự kiện thuốc</Link>.
+            Vui lòng thử lại với từ khóa khác.
           </Typography>
         </Box>
       )}

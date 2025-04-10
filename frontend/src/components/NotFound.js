@@ -1,186 +1,104 @@
 import React from 'react';
-import { 
-  Box, 
-  Container, 
-  Typography, 
-  Button, 
-  Paper,
-  Grid,
-  useTheme
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Stack,
+  Paper, // Keep Paper for subtle background/border
+  // useTheme // No longer needed if not using theme directly for complex styles
 } from '@mui/material';
-import { 
-  SentimentVeryDissatisfied as SadIcon,
+import {
+  SentimentVeryDissatisfied as SadIcon, // Keep icon, but smaller
   Home as HomeIcon,
   ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 
 const NotFound = () => {
-  const theme = useTheme();
+  // const theme = useTheme(); // Removed if not used
   const navigate = useNavigate();
 
   const goBack = () => {
-    navigate(-1);
+    navigate(-1); // Navigate back one step in history
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Paper 
-        elevation={3} 
-        sx={{ 
-          py: 8, 
-          px: 4, 
-          mt: 8, 
-          mb: 8, 
-          borderRadius: 4,
-          background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-          boxShadow: '0 8px 40px rgba(0, 0, 0, 0.12)'
-        }}
-      >
-        <Box sx={{ textAlign: 'center' }}>
-          <SadIcon sx={{ fontSize: 100, color: theme.palette.primary.main, mb: 2 }} />
-          
-          <Typography 
-            variant="h1" 
-            component="h1" 
-            sx={{ 
-              fontSize: { xs: '5rem', md: '8rem' },
-              fontWeight: 700,
-              background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              mb: 2
-            }}
+    // Use Container to constrain width, add vertical padding
+    <Container maxWidth="sm" sx={{ py: 8, textAlign: 'center' }}>
+        {/* Use an outlined Paper for minimal styling */}
+        <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 }, borderRadius: 2 }}>
+          {/* Icon */}
+          <SadIcon sx={{ fontSize: 100, color: 'gray', mb: 2 }} />
+
+          {/* Main Heading */}
+          <Typography
+            variant="h3" // Smaller heading
+            component="h1"
+            fontWeight="bold"
+            color="text.primary" // Standard text color
+            sx={{ mb: 1 }}
           >
             404
           </Typography>
-          
-          <Typography 
-            variant="h4" 
-            component="h2" 
+
+          {/* Sub Heading */}
+          <Typography
+            variant="h6" // Smaller sub-heading
+            component="h2"
+            color="text.primary" // Standard text color
             gutterBottom
-            sx={{ 
-              fontWeight: 600,
-              mb: 2
-            }}
+            sx={{ mb: 2 }}
           >
             Không tìm thấy trang
           </Typography>
-          
-          <Typography 
-            variant="body1" 
+
+          {/* Explanation Text */}
+          <Typography
+            variant="body1" // Standard body text
             color="text.secondary"
-            sx={{ 
+            sx={{
               mb: 4,
-              maxWidth: '600px',
-              mx: 'auto'
+              // maxWidth: '450px', // Optional: Limit width slightly more
+              // mx: 'auto'
             }}
           >
-            Trang bạn đang tìm kiếm có thể đã bị xóa, đổi tên hoặc tạm thời không khả dụng. 
+            Trang bạn đang tìm kiếm không tồn tại hoặc đã được chuyển đi.
             Vui lòng kiểm tra lại đường dẫn hoặc quay về trang chủ.
           </Typography>
 
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              flexDirection: { xs: 'column', sm: 'row' }, 
-              justifyContent: 'center',
-              gap: 2,
-              mt: 4
-            }}
+          {/* Action Buttons */}
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }} // Stack vertically on small screens
+            spacing={2} // Space between buttons
+            justifyContent="center" // Center buttons horizontally
           >
-            <Button 
-              variant="outlined" 
-              color="primary" 
-              size="large"
+            <Button
+              variant="outlined"
+              color="primary"
+              size="medium" // Smaller button size
               startIcon={<ArrowBackIcon />}
               onClick={goBack}
-              sx={{ px: 3 }}
             >
               Quay lại
             </Button>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              size="large"
-              component={Link} 
+            <Button
+              variant="contained"
+              color="primary"
+              size="medium" // Smaller button size
+              component={Link}
               to="/"
               startIcon={<HomeIcon />}
-              sx={{ px: 3 }}
             >
               Về trang chủ
             </Button>
-          </Box>
-        </Box>
+          </Stack>
 
-        {/* Hình minh họa */}
-        <Box 
-          sx={{ 
-            mt: 6, 
-            textAlign: 'center',
-            position: 'relative',
-            height: '200px'
-          }}
-        >
-          <Box 
-            sx={{ 
-              position: 'absolute',
-              width: '100%',
-              height: '2px',
-              bgcolor: 'divider',
-              top: '50%',
-              left: 0,
-              transform: 'translateY(-50%)'
-            }} 
-          />
-          
-          <Box 
-            sx={{ 
-              position: 'absolute',
-              width: '100%',
-              top: '50%',
-              left: 0,
-              transform: 'translateY(-50%)',
-              display: 'flex',
-              justifyContent: 'space-between'
-            }}
-          >
-            {[...Array(5)].map((_, index) => (
-              <Box 
-                key={index}
-                sx={{ 
-                  width: 10, 
-                  height: 10, 
-                  borderRadius: '50%', 
-                  bgcolor: index === 2 ? 'primary.main' : 'divider',
-                  animation: index === 2 ? 'none' : 'pulse 1.5s infinite',
-                  '@keyframes pulse': {
-                    '0%': { transform: 'scale(1)', opacity: 1 },
-                    '50%': { transform: 'scale(1.2)', opacity: 0.7 },
-                    '100%': { transform: 'scale(1)', opacity: 1 },
-                  },
-                  animationDelay: `${index * 0.3}s`
-                }} 
-              />
-            ))}
-          </Box>
-          
-          <Typography 
-            variant="body2" 
-            color="text.secondary"
-            sx={{ 
-              position: 'absolute',
-              bottom: 0,
-              width: '100%',
-              textAlign: 'center'
-            }}
-          >
-            Có vẻ như bạn đã đi lạc đường. Hãy để chúng tôi giúp bạn quay lại!
-          </Typography>
-        </Box>
-      </Paper>
+          {/* Removed the complex decorative animation box */}
+
+        </Paper>
     </Container>
   );
 };
 
-export default NotFound; 
+export default NotFound;

@@ -9,14 +9,14 @@ const router = express.Router();
  * @desc Tìm kiếm sản phẩm thuốc từ Pharmacity
  * @access Public
  */
-router.get('/search',authMiddleware, searchProducts);
+router.get('/search', searchProducts);
 
 /**
  * @route GET /api/pharmacy/product/:slug
  * @desc Lấy thông tin chi tiết sản phẩm
  * @access Public
  */
-router.get('/product/:slug', authMiddleware , getProductDetail);
+router.get('/product/:slug', getProductDetail);
 
 /**
  * @route POST /api/pharmacy/history

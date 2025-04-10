@@ -23,8 +23,10 @@ import {
   Save as SaveIcon,
   Delete as DeleteIcon,
   Info as InfoIcon,
+  LocalPharmacy as LocalPharmacyIcon,
 } from '@mui/icons-material';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const MedicineDetection = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -35,7 +37,10 @@ const MedicineDetection = () => {
   const [success, setSuccess] = useState(null);
   const [detectionResults, setDetectionResults] = useState(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [pharmacyResults, setPharmacyResults] = useState(null);
+  const [loadingPharmacy, setLoadingPharmacy] = useState(false);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -162,6 +167,50 @@ const MedicineDetection = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleSearchInPharmacy = async (drugName) => {
+    setLoadingPharmacy(true);
+    setError(null);
+    
+    try {
+      // Call your pharmacy search API with the drug name
+      const response = await axios.get(`http://localhost:5000/api/pharmacy/search`, {
+        params: { keyword: drugName }
+      });
+      
+      console.log('Pharmacy search response:', response.data.data); // Debug log
+      
+      if (response ) {
+        // Access the products array from the response
+        setPharmacyResults(response.data.data.items);
+        console.log('Pharmacy results:', response.data.data.items); // Debug log
+        setSuccess(`Đã tìm thấy ${response.data.data.total} sản phẩm tại nhà thuốc`);
+        setOpenSnackbar(true)
+      } else {
+        setPharmacyResults([]);
+        setError('Không tìm thấy sản phẩm nào tại nhà thuốc');
+        setOpenSnackbar(true);
+      }
+    } catch (err) {
+      console.error('Lỗi khi tìm sản phẩm tại nhà thuốc:', err);
+      setError(err.response?.data?.message || 'Đã xảy ra lỗi khi tìm kiếm tại nhà thuốc');
+      setOpenSnackbar(true);
+    } finally {
+      setLoadingPharmacy(false);
+    }
+  };
+
+  // Helper function to format price
+  const formatPrice = (price) => {
+    if (!price) return 'Liên hệ để biết giá';
+    if (typeof price === 'object') {
+      if (price.price && price.currencySymbol) {
+        return `${price.price.toLocaleString('vi-VN')}${price.currencySymbol}`;
+      }
+      return 'Liên hệ để biết giá';
+    }
+    return `${price.toLocaleString('vi-VN')}đ`;
   };
 
   const handleCloseSnackbar = () => {
@@ -333,11 +382,14 @@ const MedicineDetection = () => {
                         )}
                         
                         <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                          
                           <Chip
-                            icon={<InfoIcon />}
-                            label="Chi tiết"
+                            icon={<LocalPharmacyIcon />}
+                            label={loadingPharmacy ? "Đang tìm..." : "Tìm ở nhà thuốc"}
                             variant="outlined"
-                            onClick={() => {/* Xử lý xem chi tiết */}}
+                            color="primary"
+                            onClick={() => handleSearchInPharmacy(result.name || result.drugName)}
+                            disabled={loadingPharmacy}
                           />
                         </Box>
                       </CardContent>
@@ -347,6 +399,52 @@ const MedicineDetection = () => {
                   <Alert severity="info">
                     Không tìm thấy kết quả phù hợp
                   </Alert>
+                )}
+
+                {/* Hiển thị kết quả tìm kiếm tại nhà thuốc */}
+                {pharmacyResults && (
+                  <Box sx={{ mt: 4 }}>
+                    <Typography variant="h6" gutterBottom>
+                      Sản phẩm tại nhà thuốc:
+                    </Typography>
+                    
+                    {pharmacyResults.length > 0 ? (
+                      pharmacyResults.map((product, index) => (
+                        <Card key={index} sx={{ mb: 2 }}>
+                          <CardContent>
+                            <Typography variant="subtitle1" fontWeight="bold">
+                              {product.name || product.title || "Không có tên"}
+                            </Typography>
+                            
+                            {(product.price || product.retail_price) && (
+                              <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold', mt: 1 }}>
+                                Giá: {formatPrice(product.variants.price || product.retail_price)}
+                              </Typography>
+                            )}
+                            
+                            {product.manufacturer && (
+                              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                Nhà sản xuất: {product.manufacturer}
+                              </Typography>
+                            )}
+                            
+                            <Button 
+                              variant="outlined" 
+                              size="small" 
+                              sx={{ mt: 2 }}
+                              onClick={() => window.open(product.url || `/pharmacy-product/${product.slug || product.id}`, '_blank')}
+                            >
+                              Xem chi tiết
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <Alert severity="info">
+                        Không tìm thấy sản phẩm phù hợp tại nhà thuốc
+                      </Alert>
+                    )}
+                  </Box>
                 )}
 
                 <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
@@ -384,4 +482,4 @@ const MedicineDetection = () => {
   );
 };
 
-export default MedicineDetection; 
+export default MedicineDetection;

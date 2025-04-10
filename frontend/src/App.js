@@ -22,7 +22,7 @@ import UserProfile from './components/UserProfile';
 //import GeminiMedicineDetection from './components/GeminiMedicineDetection';
 import FavoriteDrugs from './components/FavoriteDrugs';
 import DrugEventsSearch from './components/DrugEventsSearch';
-import Footer from './components/layout/Footer';
+//import Footer from './components/layout/Footer';
 
 // Footer Pages
 import Blog from './pages/footer/Blog';
@@ -277,7 +277,7 @@ function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </StopPropagationWrapper>
-          <Footer />
+        
         </Router>
       </ThemeProvider>
     </UserProvider>

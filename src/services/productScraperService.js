@@ -264,7 +264,7 @@ async function scrapeProduct(slug, outputDir) {
       if (detailsSection) {
         // Mô tả
         const moTa = detailsSection.querySelector('#mo-ta');
-        data.description = moTa?.querySelector('p')?.textContent.trim() || 'Not found';
+        data.description = moTa?.querySelector('p')?.textContent.trim();
         
         // Lấy nội dung HTML từ các phần
         data.moTaHtml = moTa?.innerHTML;

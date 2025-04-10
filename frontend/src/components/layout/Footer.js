@@ -1,217 +1,115 @@
 import React from 'react';
-import { 
-  Box, 
-  Container, 
-  Grid, 
-  Typography, 
-  Link, 
-  Divider,
-  IconButton,
+import {
+  Box,
+  Container,
+  Typography,
+  Link,
   Stack,
-  useTheme
+  IconButton,
+  Divider // Keep Divider for separation
 } from '@mui/material';
 import {
   Facebook as FacebookIcon,
   Twitter as TwitterIcon,
   Instagram as InstagramIcon,
   LinkedIn as LinkedInIcon,
-  LocalPharmacy as LocalPharmacyIcon,
-  KeyboardArrowUp as KeyboardArrowUpIcon
+  // LocalPharmacy as LocalPharmacyIcon, // Remove if logo isn't used
+  // KeyboardArrowUp as KeyboardArrowUpIcon // Remove if scroll-to-top isn't used
 } from '@mui/icons-material';
 
 const Footer = () => {
-  const theme = useTheme();
-  
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  };
+  // Optional: Scroll to top function if you want to keep the button
+  // const scrollToTop = () => {
+  //   window.scrollTo({ top: 0, behavior: 'smooth' });
+  // };
 
   return (
-    <Box sx={{ 
-      bgcolor: '#1e2a38', 
-      color: 'white',
-      mt: 8,
-      pt: 6,
-      pb: 3
-    }}>
+    <Box
+      component="footer" // Use semantic footer tag
+      sx={{
+        bgcolor: '#1e2a38', // Keep dark background
+        color: 'rgba(255,255,255,0.7)', // Default lighter text color
+        py: 2, // Reduced vertical padding
+        position: 'fixed', // Fix position at the bottom
+        bottom: 0, // Align to bottom of viewport
+        left: 0, // Stretch full width from left
+        right: 0, // to right edge
+        width: '100%', // Ensure full width
+        zIndex: 1000, // Ensure it stays on top of content
+        boxShadow: '0 -2px 10px rgba(0,0,0,0.1)', // Optional: add slight shadow for depth
+      }}
+    >
       <Container maxWidth="lg">
-        <Grid container spacing={4}>
-          {/* Logo và thông tin công ty */}
-          <Grid item xs={12} sm={6} md={4}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <LocalPharmacyIcon sx={{ fontSize: 36, mr: 1, color: '#4db6ac' }} />
-              <Typography variant="h5" component="div" sx={{ fontWeight: 700 }}>
-                MediDetect
-              </Typography>
-            </Box>
-            
-            <Typography variant="body2" sx={{ mb: 2, color: 'rgba(255,255,255,0.7)' }}>
-              Công nghệ AI tiên tiến giúp nhận diện thuốc từ hình ảnh, cung cấp thông tin chi tiết và chính xác về các loại thuốc.
-            </Typography>
-            
-            <Stack direction="row" spacing={1}>
-              <IconButton
-                sx={{
-                  color: 'white',
-                  bgcolor: 'rgba(255,255,255,0.1)',
-                  '&:hover': {
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                  },
-                  transition: 'all 0.2s'
-                }}
-              >
+        {/* Single row for content */}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }} // Stack vertically on small screens
+          justifyContent="space-between"
+          alignItems="center"
+          spacing={{ xs: 2, sm: 1 }} // Adjust spacing
+        >
+          {/* Copyright */}
+          <Typography variant="body2" sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+            © {new Date().getFullYear()} MediDetect. All Rights Reserved.
+          </Typography>
+
+          {/* Links & Social */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={2} // Spacing between link groups and social icons
+            divider={<Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.2)', height: '1em', alignSelf: 'center' }} />} // Subtle divider
+          >
+            {/* Essential Links */}
+            <Stack direction="row" spacing={1.5}>
+              <Link href="/privacy-policy" underline="hover" color="inherit" sx={{ fontSize: '0.8rem', '&:hover': { color: '#4db6ac' } }}>
+                Privacy Policy
+              </Link>
+              <Link href="/terms-of-service" underline="hover" color="inherit" sx={{ fontSize: '0.8rem', '&:hover': { color: '#4db6ac' } }}>
+                Terms of Service
+              </Link>
+              <Link href="/contact" underline="hover" color="inherit" sx={{ fontSize: '0.8rem', '&:hover': { color: '#4db6ac' } }}>
+                Contact
+              </Link>
+            </Stack>
+
+            {/* Social Icons */}
+            <Stack direction="row" spacing={0.5}>
+              <IconButton size="small" href="#" target="_blank" rel="noopener noreferrer" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#fff' } }} aria-label="Facebook">
                 <FacebookIcon fontSize="small" />
               </IconButton>
-              <IconButton
-                sx={{
-                  color: 'white',
-                  bgcolor: 'rgba(255,255,255,0.1)',
-                  '&:hover': {
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                  }
-                }}
-              >
+              <IconButton size="small" href="#" target="_blank" rel="noopener noreferrer" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#fff' } }} aria-label="Twitter">
                 <TwitterIcon fontSize="small" />
               </IconButton>
-              <IconButton
-                sx={{
-                  color: 'white',
-                  bgcolor: 'rgba(255,255,255,0.1)',
-                  '&:hover': {
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                  }
-                }}
-              >
+              <IconButton size="small" href="#" target="_blank" rel="noopener noreferrer" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#fff' } }} aria-label="Instagram">
                 <InstagramIcon fontSize="small" />
               </IconButton>
-              <IconButton
-                sx={{
-                  color: 'white',
-                  bgcolor: 'rgba(255,255,255,0.1)',
-                  '&:hover': {
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                  }
-                }}
-              >
+              <IconButton size="small" href="#" target="_blank" rel="noopener noreferrer" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#fff' } }} aria-label="LinkedIn">
                 <LinkedInIcon fontSize="small" />
               </IconButton>
             </Stack>
-          </Grid>
+          </Stack>
 
-          {/* Liên kết hữu ích */}
-          <Grid item xs={12} sm={6} md={2}>
-            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-              Liên kết
-            </Typography>
-            <Stack spacing={1}>
-              <Link href="#" underline="hover" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#4db6ac' } }}>
-                Trang chủ
-              </Link>
-              <Link href="#" underline="hover" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#4db6ac' } }}>
-                Nhận diện thuốc
-              </Link>
-              <Link href="#" underline="hover" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#4db6ac' } }}>
-                Tra cứu dược liệu
-              </Link>
-              <Link href="#" underline="hover" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#4db6ac' } }}>
-                Thư viện thuốc
-              </Link>
-              <Link href="#" underline="hover" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#4db6ac' } }}>
-                Hỏi đáp
-              </Link>
-            </Stack>
-          </Grid>
-
-          {/* Hỗ trợ */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-              Hỗ trợ & Chính sách
-            </Typography>
-            <Stack spacing={1}>
-              <Link href="#" underline="hover" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#4db6ac' } }}>
-                Câu hỏi thường gặp
-              </Link>
-              <Link href="#" underline="hover" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#4db6ac' } }}>
-                Điều khoản sử dụng
-              </Link>
-              <Link href="#" underline="hover" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#4db6ac' } }}>
-                Chính sách bảo mật
-              </Link>
-              <Link href="#" underline="hover" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#4db6ac' } }}>
-                Hướng dẫn sử dụng
-              </Link>
-              <Link href="#" underline="hover" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#4db6ac' } }}>
-                Liên hệ
-              </Link>
-            </Stack>
-          </Grid>
-
-          {/* Liên hệ */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-              Thông tin liên hệ
-            </Typography>
-            <Stack spacing={2}>
-              <Box>
-                <Typography variant="body2" sx={{ color: '#4db6ac', fontWeight: 500 }}>
-                  Địa chỉ:
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                  Số 1 Đại Cồ Việt, Hai Bà Trưng, Hà Nội
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body2" sx={{ color: '#4db6ac', fontWeight: 500 }}>
-                  Email:
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                  contact@medidetect.vn
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body2" sx={{ color: '#4db6ac', fontWeight: 500 }}>
-                  Hotline:
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                  1900 6789
-                </Typography>
-              </Box>
-            </Stack>
-          </Grid>
-        </Grid>
-
-        <Divider sx={{ my: 4, bgcolor: 'rgba(255,255,255,0.1)' }} />
-        
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          flexWrap: 'wrap'
-        }}>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-            © {new Date().getFullYear()} MediDetect. Tất cả các quyền được bảo lưu.
-          </Typography>
-          
-          <IconButton 
-            onClick={scrollToTop} 
-            sx={{ 
-              color: 'white', 
-              bgcolor: '#4db6ac',
-              '&:hover': {
-                bgcolor: '#00897b',
-              },
-              transition: 'all 0.2s'
+          {/* Optional: Scroll to Top Button - uncomment if needed */}
+          {/* <IconButton
+            size="small"
+            onClick={scrollToTop}
+            sx={{
+              color: 'white',
+              bgcolor: 'rgba(77, 182, 172, 0.5)', // More subtle background
+              '&:hover': { bgcolor: '#4db6ac' }, // Highlight on hover
+              position: 'fixed', // Or keep it static in the footer flow
+              bottom: 16,
+              right: 16, // Position if fixed
+              // If static, remove position/bottom/right and potentially add margin
             }}
+            aria-label="Scroll back to top"
           >
             <KeyboardArrowUpIcon />
-          </IconButton>
-        </Box>
+          </IconButton> */}
+        </Stack>
       </Container>
     </Box>
   );
 };
 
-export default Footer; 
+export default Footer;

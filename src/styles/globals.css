@@ -1,0 +1,26 @@
+/* Add your global styles here */
+
+/* Footer fixes */
+.footer {
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  margin-top: 2rem;
+  clear: both;
+}
+
+/* Ensure proper layout structure */
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+/* Add padding to the bottom of pages to prevent overlap */
+.page-container {
+  padding-bottom: 2rem;
+}
