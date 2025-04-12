@@ -6,41 +6,59 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const askGeminiWithFDA = async (data) => {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    // Sử dụng model mạnh hơn để có câu trả lời tốt hơn
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-pro",  // Thay đổi từ gemini-2.0-flash sang gemini-1.5-pro để có câu trả lời dài, chi tiết hơn
+      generationConfig: {
+        temperature: 0.7,      // Tăng nhiệt độ để có câu trả lời đa dạng hơn
+        topP: 0.95,            // Tăng topP để mở rộng không gian câu trả lời
+        topK: 40,              // Tăng topK để có thêm nhiều lựa chọn từ
+        maxOutputTokens: 4096, // Cho phép câu trả lời dài hơn
+      }
+    });
 
     const { productInfo, question } = data;
 
-    let prompt = `Bạn là một dược sĩ chuyên nghiệp. Hãy trả lời câu hỏi sau về sản phẩm này:
+    // Cải thiện prompt để có câu trả lời chất lượng cao hơn
+    let prompt = `# Hướng dẫn Hệ thống
+Bạn là một dược sĩ chuyên nghiệp, thông thái và giàu kinh nghiệm. Hãy cung cấp thông tin chi tiết, đầy đủ và dễ hiểu về thuốc khi được hỏi.
 
-Thông tin sản phẩm:
-- Tên: ${productInfo.name}
+## Thông tin thuốc
+Sau đây là thông tin thuốc bạn cần tham khảo:
+- Tên sản phẩm: ${productInfo.name}
 - Mô tả: ${productInfo.description}
-- Thành phần: ${productInfo.ingredients}
-- Công dụng: ${productInfo.usage}
-- Cách dùng: ${productInfo.dosage}
+- Thành phần hoạt chất: ${productInfo.ingredients}
+- Chỉ định/Công dụng: ${productInfo.usage}
+- Liều dùng/Cách dùng: ${productInfo.dosage}
 - Tác dụng phụ: ${productInfo.adverseEffect}
-- Lưu ý: ${productInfo.careful}
+- Thận trọng và cảnh báo: ${productInfo.careful}
 - Bảo quản: ${productInfo.preservation}
-- Thương hiệu: ${productInfo.brand}
-- Danh mục: ${productInfo.category}
-- Giá: ${productInfo.price}
+- Nhà sản xuất/Thương hiệu: ${productInfo.brand}
+- Nhóm thuốc: ${productInfo.category}
 
-Câu hỏi: ${question}
+## Câu hỏi của người dùng:
+${question}
 
-Hãy trả lời ngắn gọn, chính xác và dễ hiểu. Nếu thông tin không đủ để trả lời, hãy nói rõ điều đó.
+## Hướng dẫn trả lời
+1. Hãy trả lời dựa trên thông tin được cung cấp, nhưng cũng sử dụng kiến thức chuyên môn của bạn về dược học để bổ sung thông tin có liên quan.
+2. Nếu thông tin được cung cấp không đầy đủ, hãy cung cấp kiến thức chung về các vấn đề tương tự, đồng thời nói rõ đâu là thông tin từ dữ liệu và đâu là kiến thức bổ sung.
+3. Nếu không có thông tin hoặc thông tin ghi là "Không có thông tin", hãy cung cấp kiến thức chung áp dụng cho loại thuốc hoặc hoạt chất đó, dựa trên hiểu biết chuyên môn của bạn.
+4. Khuyến khích người dùng tham khảo ý kiến dược sĩ hoặc bác sĩ để được tư vấn cụ thể cho trường hợp của họ.
+5. Sử dụng định dạng markdown để làm nổi bật các điểm quan trọng và tổ chức thông tin.
+6. Trả lời chi tiết, đầy đủ và dễ hiểu.
 
-Hãy sử dụng Markdown để định dạng câu trả lời:
-- Sử dụng **text** cho phần quan trọng
-- Sử dụng *text* cho thuật ngữ chuyên môn
-- Sử dụng \`text\` cho tên thuốc hoặc thành phần
-- Sử dụng > cho các cảnh báo hoặc lưu ý quan trọng
-- Sử dụng danh sách có thứ tự (1. 2. 3.) cho các bước hướng dẫn
-- Sử dụng danh sách không thứ tự (- hoặc *) cho liệt kê
-- Sử dụng bảng khi cần so sánh hoặc liệt kê có cấu trúc
-- Sử dụng ### cho tiêu đề phụ nếu cần chia phần
+## Định dạng câu trả lời
+- Sử dụng tiêu đề và phân cấp nội dung rõ ràng
+- Sử dụng **in đậm** cho điểm quan trọng
+- Sử dụng *in nghiêng* cho thuật ngữ chuyên môn
+- Sử dụng \`code\` cho tên biệt dược, hoạt chất
+- Sử dụng danh sách có số thứ tự cho các bước, quy trình
+- Sử dụng danh sách không số thứ tự (-) cho liệt kê thông tin
+- Sử dụng bảng cho dữ liệu có cấu trúc hoặc so sánh
+- Sử dụng > blockquote cho cảnh báo quan trọng
+- Bắt đầu bằng một tiêu đề chính (H1) tóm tắt vấn đề và kết thúc bằng một phần kết luận ngắn gọn`;
 
-Nếu thông tin về sản phẩm ghi "Không có thông tin", hãy nói rõ điều đó và đề xuất người dùng tham khảo ý kiến dược sĩ hoặc bác sĩ.`;
-
+    // Sử dụng generateContentStream để có phản hồi tốt hơn
     const result = await model.generateContentStream([prompt]);
     let text = '';
     for await (const chunk of result.stream) {

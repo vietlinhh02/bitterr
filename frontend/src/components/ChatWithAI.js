@@ -30,7 +30,9 @@ import {
   DialogActions,
   List,
   ListItem,
-  Badge
+  Badge,
+  CardMedia,
+  Grid
 } from '@mui/material';
 import { 
   Send as SendIcon, 
@@ -49,6 +51,7 @@ import { askGeminiAboutDrug, getChatHistory, deleteChatHistoryItem } from '../se
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import DrugSearchDialog from './DrugSearchDialog';
+import axiosInstance from '../axios-config';
 
 // Update the markdown styles
 const markdownStyles = {
@@ -177,21 +180,120 @@ const markdownStyles = {
   }
 };
 
+// Thêm component MessageBubble cho hiển thị chat dạng bong bóng
+const MessageBubble = ({ isUser, message, timestamp }) => {
+  return (
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: isUser ? 'row-reverse' : 'row',
+      mb: 2
+    }}>
+      <Avatar 
+        sx={{ 
+          bgcolor: isUser ? 'primary.main' : 'secondary.main',
+          width: 40, 
+          height: 40,
+          mr: isUser ? 0 : 1.5,
+          ml: isUser ? 1.5 : 0
+        }}
+      >
+        {isUser ? <PersonIcon /> : <SmartToyIcon />}
+      </Avatar>
+      <Box sx={{ maxWidth: '80%' }}>
+        <Paper 
+          elevation={1} 
+          sx={{ 
+            p: 2, 
+            bgcolor: isUser ? 'primary.50' : 'grey.50',
+            borderRadius: 2,
+            borderTopLeftRadius: isUser ? 2 : 0,
+            borderTopRightRadius: isUser ? 0 : 2,
+          }}
+        >
+          <Box className="markdown-content" sx={{ ...markdownStyles['& .markdown-content'] }}>
+            {isUser ? (
+              <Typography>{message}</Typography>
+            ) : (
+              <ReactMarkdown
+                children={message}
+                remarkPlugins={[remarkGfm]}
+              />
+            )}
+          </Box>
+        </Paper>
+        <Typography variant="caption" color="text.secondary" sx={{ 
+          display: 'block', 
+          mt: 0.5, 
+          textAlign: isUser ? 'right' : 'left'
+        }}>
+          {timestamp}
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
+
+// Component hiển thị thông tin thuốc
+const DrugInfoCard = ({ drugInfo }) => {
+  if (!drugInfo) return null;
+  
+  return (
+    <Card sx={{ mb: 3, boxShadow: 3 }}>
+      {drugInfo.imageUrl && (
+        <CardMedia
+          component="img"
+          height="140"
+          image={drugInfo.imageUrl}
+          alt={drugInfo.name}
+          sx={{ objectFit: 'contain', bgcolor: '#f9f9f9', p: 1 }}
+        />
+      )}
+      <CardContent>
+        <Typography variant="h6" component="div">
+          {drugInfo.name}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          {drugInfo.manufacturer?.name || 'Không có thông tin nhà sản xuất'}
+        </Typography>
+        <Divider sx={{ my: 1 }} />
+        <Grid container spacing={1} sx={{ mt: 1 }}>
+          <Grid item xs={12}>
+            <Typography variant="subtitle2">Phân loại:</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+              {drugInfo.categories?.map((category, index) => (
+                <Chip key={index} label={category} size="small" />
+              ))}
+            </Box>
+          </Grid>
+          {drugInfo.prescriptionRequired !== undefined && (
+            <Grid item xs={12} sx={{ mt: 1 }}>
+              <Chip 
+                label={drugInfo.prescriptionRequired ? "Cần đơn thuốc" : "Không cần đơn"} 
+                color={drugInfo.prescriptionRequired ? "warning" : "success"}
+                size="small"
+              />
+            </Grid>
+          )}
+        </Grid>
+      </CardContent>
+    </Card>
+  );
+};
+
 const ChatWithAI = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [userInput, setUserInput] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [chatHistory, setChatHistory] = useState([]);
-  const [allChats, setAllChats] = useState([]);  // Danh sách tất cả các cuộc trò chuyện
-  const [currentChatId, setCurrentChatId] = useState(null);  // ID của cuộc trò chuyện hiện tại
-  const [drugInfo, setDrugInfo] = useState(null);
-  const [error, setError] = useState('');
+  const messagesEndRef = useRef(null);
+  const [drugInfo, setDrugInfo] = useState(location.state?.drugInfo);
+  const [error, setError] = useState(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [openChatDialog, setOpenChatDialog] = useState(false);  // Điều khiển dialog lịch sử chat
   const [openDrugSearchDialog, setOpenDrugSearchDialog] = useState(false); // Điều khiển dialog tìm kiếm thuốc
-  const chatEndRef = useRef(null);
   const [anchorEl, setAnchorEl] = useState(null);  // Cho dropdown menu
+  const [chatHistory, setChatHistory] = useState([]); // Thêm state cho lịch sử chat
   
   const suggestedQuestions = [
     "Thuốc này có tác dụng phụ gì không?",
@@ -201,248 +303,75 @@ const ChatWithAI = () => {
     "Cơ chế hoạt động của thuốc này là gì?"
   ];
 
-  // Lấy thông tin thuốc từ location state
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   useEffect(() => {
-    if (location.state?.drugInfo) {
-      console.log('Drug info from location:', location.state.drugInfo);
-      setDrugInfo(location.state.drugInfo);
-    }
-  }, [location.state]);
+    scrollToBottom();
+  }, [messages]);
 
-  // Lấy danh sách tất cả các cuộc trò chuyện khi component mount
+  // Thêm tin nhắn chào mừng khi component được tải
   useEffect(() => {
-    fetchAllChats();
-  }, []);
+    const welcomeMessage = drugInfo
+      ? `Chào mừng bạn đến với trợ lý AI của chúng tôi. Tôi có thể cung cấp thông tin về thuốc "${drugInfo.name}". Bạn có câu hỏi gì về thuốc này không?`
+      : 'Chào mừng bạn đến với trợ lý AI của chúng tôi. Tôi có thể trả lời các câu hỏi về thuốc và sức khỏe. Hãy đặt câu hỏi của bạn!';
+    
+    setMessages([
+      {
+        text: welcomeMessage,
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString(),
+      },
+    ]);
+  }, [drugInfo]);
 
-  // Cuộn xuống cuối cùng khi có tin nhắn mới
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatHistory]);
-
-  // Lấy danh sách tất cả các cuộc trò chuyện từ server
-  const fetchAllChats = async () => {
-    try {
-      const response = await getChatHistory();
-      console.log('All chat history response:', response.data);
-      
-      let chatData = [];
-      
-      if (response.data && response.data.success === true && Array.isArray(response.data.chatHistory)) {
-        chatData = response.data.chatHistory;
-      } else if (Array.isArray(response.data)) {
-        chatData = response.data;
-      } else {
-        console.error('Dữ liệu lịch sử chat không phải là mảng:', response.data);
-        return;
-      }
-
-      // Nhóm chat theo drugQuery
-      const groupedChats = {};
-      chatData.forEach(chat => {
-        if (!groupedChats[chat.drugQuery]) {
-          groupedChats[chat.drugQuery] = {
-            drugName: chat.drugQuery,
-            messages: [],
-            lastTimestamp: chat.timestamp
-          };
-        }
-        
-        groupedChats[chat.drugQuery].messages.push(chat);
-        
-        // Cập nhật timestamp gần nhất
-        if (new Date(chat.timestamp) > new Date(groupedChats[chat.drugQuery].lastTimestamp)) {
-          groupedChats[chat.drugQuery].lastTimestamp = chat.timestamp;
-        }
-      });
-      
-      // Chuyển đổi thành mảng và sắp xếp theo timestamp gần đây nhất
-      const chatSessions = Object.values(groupedChats).sort((a, b) => 
-        new Date(b.lastTimestamp) - new Date(a.lastTimestamp)
-      );
-      
-      setAllChats(chatSessions);
-      
-      // Nếu có chat, hiển thị chat gần nhất
-      if (chatSessions.length > 0 && !currentChatId) {
-        loadChatByDrugName(chatSessions[0].drugName);
-      }
-    } catch (err) {
-      console.error('Lỗi khi lấy danh sách chat:', err);
-      setError('Không thể tải lịch sử chat. Vui lòng thử lại sau.');
-      setOpenSnackbar(true);
-    }
-  };
-
-  // Lấy lịch sử chat theo drugQuery
-  const fetchChatHistory = async (drugQuery = null) => {
-    try {
-      const response = await getChatHistory();
-      console.log('Chat history response:', response.data);
-      
-      // Xử lý cấu trúc response {success: true, chatHistory: Array(20)}
-      let chatHistoryData;
-      
-      if (response.data && response.data.success === true && Array.isArray(response.data.chatHistory)) {
-        // Cấu trúc {success: true, chatHistory: Array(20)}
-        chatHistoryData = response.data.chatHistory;
-        console.log('Đã nhận dữ liệu lịch sử chat từ response.data.chatHistory', chatHistoryData.length);
-      } else if (Array.isArray(response.data)) {
-        // Trường hợp response.data trực tiếp là mảng
-        chatHistoryData = response.data;
-        console.log('Đã nhận dữ liệu lịch sử chat trực tiếp từ response.data', chatHistoryData.length);
-      } else {
-        console.error('Dữ liệu lịch sử chat không phải là mảng:', response.data);
-        setChatHistory([]);
-        return;
-      }
-      
-      // Lọc theo drugQuery nếu được cung cấp
-      if (drugQuery) {
-        chatHistoryData = chatHistoryData.filter(chat => chat.drugQuery === drugQuery);
-      }
-      
-      // Đảm bảo mỗi mục trong lịch sử chat đều có timestamp hợp lệ
-      const validatedChatHistory = chatHistoryData.map(chat => {
-        if (!chat.timestamp) {
-          return {
-            ...chat,
-            timestamp: new Date().toISOString()
-          };
-        }
-        
-        // Kiểm tra timestamp có hợp lệ không
-        try {
-          const date = new Date(chat.timestamp);
-          if (isNaN(date.getTime())) {
-            return {
-              ...chat,
-              timestamp: new Date().toISOString()
-            };
-          }
-        } catch (e) {
-          console.warn('Invalid timestamp in chat history item:', chat);
-          return {
-            ...chat,
-            timestamp: new Date().toISOString()
-          };
-        }
-        
-        return chat;
-      });
-      
-      // Sắp xếp theo thứ tự thời gian
-      validatedChatHistory.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-      
-      setChatHistory(validatedChatHistory);
-    } catch (err) {
-      console.error('Lỗi khi lấy lịch sử chat:', err);
-      setError('Không thể tải lịch sử chat. Vui lòng thử lại sau.');
-      setOpenSnackbar(true);
-      setChatHistory([]);
-    }
-  };
-
-  // Xử lý khi chọn một cuộc trò chuyện
-  const loadChatByDrugName = (drugName) => {
-    // Tìm thông tin về thuốc từ lịch sử chat
-    const chatSession = allChats.find(chat => chat.drugName === drugName);
-    if (chatSession && chatSession.messages.length > 0) {
-      const firstMessage = chatSession.messages[0];
-      
-      // Cập nhật thông tin thuốc
-      setDrugInfo({
-        brand_name: firstMessage.drugQuery,
-        generic_name: firstMessage.drugQuery,
-        // Các thông tin khác có thể lấy từ message nếu có
-      });
-      
-      setCurrentChatId(drugName);
-      fetchChatHistory(drugName);
+  const handleSendMessage = async (e) => {
+    if (e && e.preventDefault) {
+      e.preventDefault();
     }
     
-    setOpenChatDialog(false);
-  };
+    if (!input.trim()) return;
 
-  // Xử lý khi người dùng muốn tạo cuộc trò chuyện mới
-  const handleNewChat = (skipDrugSelection = false) => {
-    // Xóa thông tin thuốc hiện tại và lịch sử chat
-    setChatHistory([]);
-    setCurrentChatId(null);
-    
-    // Nếu không bỏ qua việc chọn thuốc, mở dialog chọn thuốc
-    if (!skipDrugSelection) {
-      setDrugInfo(null);
-      setOpenDrugSearchDialog(true);
-    }
-    
-    setOpenChatDialog(false);
-  };
+    const userMessage = {
+      id: Date.now().toString(),
+      content: input,
+      sender: 'user',
+      timestamp: new Date().toLocaleTimeString()
+    };
 
-  // Hiển thị menu lịch sử chat
-  const handleMenuClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  // Đóng menu
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
-  };
-
-  // Mở dialog lịch sử chat
-  const handleOpenChatHistory = () => {
-    setOpenChatDialog(true);
-    handleCloseMenu();
-  };
-
-  // Xử lý khi người dùng gửi câu hỏi
-  const handleSendQuestion = async () => {
-    if (!userInput.trim()) return;
-    
-    if (!drugInfo) {
-      setError('Vui lòng chọn thuốc trước khi gửi câu hỏi');
-      setOpenSnackbar(true);
-      return;
-    }
-    
-    // Thêm câu hỏi của người dùng vào lịch sử chat
-    const userMessage = { role: 'user', content: userInput };
-    const updatedChatHistory = [...chatHistory, userMessage];
-    setChatHistory(updatedChatHistory);
-    setUserInput('');
-    
-    // Hiển thị trạng thái đang tải
+    setMessages(prev => [...prev, userMessage]);
+    setInput("");
     setLoading(true);
-    
+    setError(null);
+
     try {
-      // Chuẩn bị dữ liệu để gửi đến API
-      const requestData = {
-        messages: updatedChatHistory,
-        drugInfo: {
-          brand_name: drugInfo.brand_name || '',
-          generic_name: drugInfo.generic_name || '',
-          active_ingredient: drugInfo.active_ingredient || '',
-          indications_and_usage: drugInfo.indications_and_usage || '',
-          warnings: drugInfo.warnings || '',
-          dosage_and_administration: drugInfo.dosage_and_administration || '',
-          adverse_reactions: drugInfo.adverse_reactions || ''
-        },
-        drugQuery: drugInfo.brand_name || drugInfo.generic_name || 'unknown_drug'
+      const response = await askGeminiAboutDrug({
+        drugInfo: drugInfo || null,
+        question: input,
+        messages: messages.map(msg => ({
+          role: msg.isUser || msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text || msg.content
+        })).concat([{
+          role: 'user',
+          content: input
+        }])
+      });
+
+      // Xử lý phản hồi - Không kiểm tra ok vì response đã là dữ liệu
+      const data = response.data;
+
+      const aiMessage = {
+        id: Date.now().toString() + '-ai',
+        content: data.answer || data.response,
+        sender: 'ai',
+        timestamp: new Date().toLocaleTimeString()
       };
-      
-      // Gọi API để lấy câu trả lời
-      const response = await askGeminiAboutDrug(requestData);
-      
-      // Xử lý kết quả trả về
-      if (response.data && response.data.answer) {
-        const aiMessage = { role: 'assistant', content: response.data.answer };
-        setChatHistory([...updatedChatHistory, aiMessage]);
-      } else {
-        throw new Error('Không nhận được câu trả lời hợp lệ từ API');
-      }
+
+      setMessages(prev => [...prev, aiMessage]);
     } catch (err) {
-      console.error('Lỗi khi gửi câu hỏi:', err);
-      setError('Đã xảy ra lỗi khi gửi câu hỏi. Vui lòng thử lại sau.');
-      setOpenSnackbar(true);
+      console.error('Lỗi khi gửi tin nhắn:', err);
+      setError(`Đã xảy ra lỗi: ${err.message || 'Không xác định'}. Vui lòng thử lại sau.`);
     } finally {
       setLoading(false);
     }
@@ -451,12 +380,12 @@ const ChatWithAI = () => {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendQuestion();
+      handleSendMessage();
     }
   };
 
   const handleSuggestedQuestionClick = (suggestedQuestion) => {
-    setUserInput(suggestedQuestion);
+    setInput(suggestedQuestion);
     // Không gửi ngay lập tức để người dùng có thể chỉnh sửa nếu muốn
   };
 
@@ -487,6 +416,33 @@ const ChatWithAI = () => {
       if (!timestamp) {
         console.warn('Timestamp is undefined or null');
         return 'Không có thời gian';
+      }
+      
+      // Nếu timestamp là chuỗi thời gian như "5:58:55 PM", chuyển đổi sang đối tượng Date
+      if (typeof timestamp === 'string' && /\d+:\d+:\d+/.test(timestamp)) {
+        // Sử dụng thời gian hiện tại nhưng chỉ lấy giờ:phút:giây từ timestamp
+        const now = new Date();
+        const timeParts = timestamp.match(/(\d+):(\d+):(\d+)\s*([AP]M)?/i);
+        
+        if (timeParts) {
+          let hours = parseInt(timeParts[1], 10);
+          const minutes = parseInt(timeParts[2], 10);
+          const seconds = parseInt(timeParts[3], 10);
+          const ampm = timeParts[4] ? timeParts[4].toUpperCase() : null;
+          
+          // Xử lý AM/PM nếu có
+          if (ampm === 'PM' && hours < 12) {
+            hours += 12;
+          } else if (ampm === 'AM' && hours === 12) {
+            hours = 0;
+          }
+          
+          now.setHours(hours, minutes, seconds, 0);
+          return new Intl.DateTimeFormat('vi-VN', {
+            day: '2-digit', month: '2-digit', year: 'numeric', 
+            hour: '2-digit', minute: '2-digit'
+          }).format(now);
+        }
       }
       
       // Thử chuyển đổi timestamp thành đối tượng Date
@@ -525,32 +481,56 @@ const ChatWithAI = () => {
     
     // Tạo ID cho cuộc trò chuyện mới dựa trên tên thuốc
     const chatId = selectedDrug.brand_name || selectedDrug.generic_name;
-    setCurrentChatId(chatId);
     
     // Thêm thông báo chào mừng
     const welcomeMessage = {
-      role: 'assistant',
-      content: `Tôi sẽ giúp bạn trả lời các câu hỏi về thuốc ${selectedDrug.brand_name || selectedDrug.generic_name}. Bạn có thể hỏi về tác dụng, liều dùng, tác dụng phụ hoặc bất kỳ thông tin nào khác về thuốc này.`
+      text: `Tôi sẽ giúp bạn trả lời các câu hỏi về thuốc ${selectedDrug.brand_name || selectedDrug.generic_name}. Bạn có thể hỏi về tác dụng, liều dùng, tác dụng phụ hoặc bất kỳ thông tin nào khác về thuốc này.`,
+      isUser: false,
+      timestamp: new Date().toLocaleTimeString(),
     };
     
     // Thiết lập lịch sử chat với thông báo chào mừng
-    setChatHistory([welcomeMessage]);
+    setMessages((prev) => [...prev, welcomeMessage]);
   };
 
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);
   };
 
+  // Thêm hàm fetchAllChats để lấy lịch sử chat
+  const fetchAllChats = async () => {
+    try {
+      setLoading(true);
+      const response = await getChatHistory();
+      if (response.data && response.data.success) {
+        setChatHistory(response.data.chatHistory);
+      }
+    } catch (err) {
+      console.error('Lỗi khi lấy lịch sử chat:', err);
+      setError('Không thể lấy lịch sử chat. Vui lòng thử lại sau.');
+      setOpenSnackbar(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Gọi fetchAllChats khi component mount và khi mở dialog lịch sử
+  useEffect(() => {
+    if (openChatDialog) {
+      fetchAllChats();
+    }
+  }, [openChatDialog]);
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
+    <Container maxWidth="md" sx={{ py: 4 }}>
       <Paper 
         elevation={3} 
         sx={{ 
+          borderRadius: 2, 
+          overflow: 'hidden',
+          height: 'calc(100vh - 120px)',
           display: 'flex',
-          flexDirection: 'column',
-          height: 'calc(100vh - 140px)',
-          borderRadius: 3,
-          overflow: 'hidden'
+          flexDirection: 'column'
         }}
       >
         {/* Header */}
@@ -559,544 +539,387 @@ const ChatWithAI = () => {
             p: 2, 
             bgcolor: 'primary.main', 
             color: 'white',
-            borderTopLeftRadius: 12,
-            borderTopRightRadius: 12,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            boxShadow: 1
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <SmartToyIcon sx={{ mr: 1.5, fontSize: 28 }} />
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Chat với AI về Thuốc
-            </Typography>
-          </Box>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {drugInfo && (
-              <Chip
-                icon={<MedicalServicesIcon />}
-                label={drugInfo.brand_name || drugInfo.generic_name}
-                color="secondary"
-                variant="filled"
-                sx={{ 
-                  color: 'white', 
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  '& .MuiChip-icon': { color: 'white' }
-                }}
-              />
-            )}
-            
             <IconButton 
               color="inherit" 
-              onClick={handleMenuClick}
-              sx={{ ml: 1 }}
+              onClick={() => navigate(-1)} 
+              sx={{ mr: 1 }}
             >
+              <ArrowBackIcon />
+            </IconButton>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                <SmartToyIcon sx={{ mr: 1 }} />
+                Chat với AI
+              </Typography>
+              {drugInfo && (
+                <Typography variant="body2" sx={{ mt: -0.5, opacity: 0.85 }}>
+                  Thông tin về: {drugInfo.name || drugInfo.brand_name || drugInfo.generic_name}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+          <Box>
+            <IconButton color="inherit" onClick={() => setAnchorEl(true)}>
               <MenuIcon />
             </IconButton>
-            
             <Menu
               anchorEl={anchorEl}
               open={Boolean(anchorEl)}
-              onClose={handleCloseMenu}
+              onClose={() => setAnchorEl(null)}
               transformOrigin={{ horizontal: 'right', vertical: 'top' }}
               anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
             >
-              <MenuItem onClick={() => handleNewChat(false)}>
-                <ListItemIcon>
-                  <AddIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Tạo cuộc trò chuyện mới</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={handleOpenChatHistory}>
+              <MenuItem onClick={() => setOpenChatDialog(true)}>
                 <ListItemIcon>
                   <HistoryIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText>Lịch sử trò chuyện</ListItemText>
+                <ListItemText>Lịch sử chat</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => handleSelectDrug()}>
+                <ListItemIcon>
+                  <SearchIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Tìm thuốc khác</ListItemText>
               </MenuItem>
             </Menu>
           </Box>
         </Box>
-        
-        {/* Dialog Lịch sử trò chuyện */}
-        <Dialog
-          open={openChatDialog}
-          onClose={() => setOpenChatDialog(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <HistoryIcon sx={{ mr: 1.5, color: 'primary.main' }} />
-              <Typography variant="h6">Lịch sử trò chuyện</Typography>
-            </Box>
-          </DialogTitle>
-          <DialogContent dividers>
-            {allChats.length === 0 ? (
-              <Box sx={{ py: 2, textAlign: 'center' }}>
-                <Typography color="text.secondary">
-                  Không có lịch sử trò chuyện nào
-                </Typography>
-              </Box>
-            ) : (
-              <List>
-                {allChats.map((chat, index) => (
-                  <ListItem
-                    key={index}
-                    button
-                    onClick={() => loadChatByDrugName(chat.drugName)}
-                    sx={{
-                      mb: 1,
-                      borderRadius: 1,
-                      bgcolor: currentChatId === chat.drugName ? 'action.selected' : 'background.paper',
-                      '&:hover': {
-                        bgcolor: 'action.hover'
-                      }
-                    }}
-                  >
-                    <ListItemIcon>
-                      <Badge badgeContent={chat.messages.length} color="primary">
-                        <MedicalServicesIcon color="primary" />
-                      </Badge>
-                    </ListItemIcon>
-                    <ListItemText 
-                      primary={chat.drugName}
-                      secondary={`${chat.messages.length} tin nhắn - Cập nhật: ${formatTimestamp(chat.lastTimestamp)}`}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button 
-              startIcon={<AddIcon />}
-              color="primary"
-              onClick={() => handleNewChat(true)}
-            >
-              Tạo cuộc trò chuyện mới
-            </Button>
-            <Button onClick={() => setOpenChatDialog(false)}>
-              Đóng
-            </Button>
-          </DialogActions>
-        </Dialog>
 
-        {/* Drug Info Panel */}
-        {drugInfo ? (
-          <Box sx={{ p: 2, bgcolor: 'background.paper', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <MedicalServicesIcon color="primary" sx={{ mr: 1.5 }} />
-                <Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    {drugInfo.brand_name || drugInfo.generic_name || 'Không có tên thuốc'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {drugInfo.active_ingredient || 'Không có thông tin thành phần'}
-                  </Typography>
-                </Box>
-              </Box>
-              <Button 
-                variant="outlined" 
-                size="small" 
-                startIcon={<SearchIcon />}
-                onClick={handleSelectDrug}
-              >
-                Chọn thuốc khác
-              </Button>
-            </Box>
-          </Box>
-        ) : (
-          <Box 
+        {/* Khu vực hiển thị thông tin thuốc */}
+        {drugInfo && (
+          <Paper 
+            elevation={0} 
             sx={{ 
-              p: 3, 
-              bgcolor: 'background.paper', 
-              borderBottom: '1px solid rgba(0,0,0,0.08)',
-              textAlign: 'center'
+              p: 2, 
+              mx: 2, 
+              mt: 2, 
+              borderRadius: 2, 
+              border: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'background.default',
+              display: 'flex', 
+              alignItems: 'center'
             }}
           >
-            <Alert 
-              severity="info" 
-              sx={{ mb: 2, borderRadius: 2 }}
-              icon={<MedicalServicesIcon />}
-            >
-              Bạn chưa chọn thuốc để hỏi
-            </Alert>
+            <MedicalServicesIcon color="primary" sx={{ fontSize: 28, mr: 2 }} />
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
+                {drugInfo.name || drugInfo.brand_name || drugInfo.generic_name}
+              </Typography>
+              {drugInfo.active_ingredient && (
+                <Typography variant="body2" color="text.secondary">
+                  Thành phần: {drugInfo.active_ingredient}
+                </Typography>
+              )}
+              {drugInfo.ingredients && drugInfo.ingredients.length > 0 && (
+                <Typography variant="body2" color="text.secondary">
+                  Thành phần: {drugInfo.ingredients.join(', ')}
+                </Typography>
+              )}
+            </Box>
             <Button 
-              variant="contained" 
-              color="primary" 
-              onClick={handleSelectDrug}
+              variant="outlined" 
+              size="small" 
               startIcon={<SearchIcon />}
+              onClick={handleSelectDrug}
             >
-              Tìm kiếm thuốc
+              Đổi thuốc
             </Button>
-          </Box>
+          </Paper>
         )}
 
-        {/* Chat History */}
+        {/* Khu vực hiển thị chat */}
         <Box 
           sx={{ 
             flexGrow: 1, 
             overflowY: 'auto', 
             p: 3,
-            bgcolor: '#f5f7f9',
+            bgcolor: '#f8f9fa',
             display: 'flex',
             flexDirection: 'column',
-            gap: 2
+            justifyContent: messages.length === 0 ? 'center' : 'flex-start'
           }}
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          onMouseUp={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
         >
-          {!Array.isArray(chatHistory) || chatHistory.length === 0 ? (
+          {messages.length === 0 ? (
+            // Hiển thị hướng dẫn khi chưa có tin nhắn
             <Box 
               sx={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                height: '100%',
-                opacity: 0.7
+                textAlign: 'center', 
+                p: 3, 
+                borderRadius: 2, 
+                mx: 'auto',
+                maxWidth: 500,
+                bgcolor: 'white',
+                boxShadow: 1
               }}
             >
-              <QuestionAnswerIcon sx={{ fontSize: 60, color: 'primary.main', opacity: 0.5, mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                Chưa có cuộc trò chuyện nào
+              <QuestionAnswerIcon sx={{ fontSize: 60, color: 'primary.light', mb: 2 }} />
+              <Typography variant="h6" gutterBottom>
+                Hãy bắt đầu trò chuyện với AI
               </Typography>
-              <Typography variant="body2" color="text.secondary" align="center">
-                Hãy chọn một loại thuốc và đặt câu hỏi để bắt đầu trò chuyện với AI
+              <Typography variant="body2" color="text.secondary" paragraph>
+                {drugInfo 
+                  ? `Đặt câu hỏi về thuốc ${drugInfo.name || drugInfo.brand_name || drugInfo.generic_name} để nhận thông tin chuyên sâu từ trợ lý AI của chúng tôi.`
+                  : 'Vui lòng chọn một loại thuốc để bắt đầu trò chuyện.'}
               </Typography>
-            </Box>
-          ) : (
-            chatHistory.map((message, index) => (
-              <Fade in={true} key={index} timeout={300} style={{ transitionDelay: `${index * 50}ms` }}>
-                <Box>
-                  {message.role === 'user' ? (
-                    // User Message
-                    <Box 
-                      sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'flex-end', 
-                        mb: 1.5,
-                        alignItems: 'flex-start'
-                      }}
-                    >
-                      <Box 
-                        sx={{ 
-                          maxWidth: '80%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'flex-end'
-                        }}
-                      >
-                        <Paper 
-                          sx={{ 
-                            p: 2, 
-                            bgcolor: 'primary.main',
-                            color: 'white',
-                            borderRadius: '16px 16px 0 16px'
-                          }}
-                        >
-                          <Typography variant="body1">
-                            {message.content}
-                          </Typography>
-                        </Paper>
-                      </Box>
-                      <Avatar 
-                        sx={{ 
-                          ml: 1.5, 
-                          bgcolor: 'primary.dark',
-                          width: 36,
-                          height: 36
-                        }}
-                      >
-                        <PersonIcon />
-                      </Avatar>
-                    </Box>
-                  ) : (
-                    // AI Message
-                    <Box 
-                      sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'flex-start',
-                        alignItems: 'flex-start',
-                        mb: 1.5
-                      }}
-                    >
-                      <Avatar 
-                        sx={{ 
-                          mr: 1.5, 
-                          bgcolor: 'secondary.main',
-                          width: 36,
-                          height: 36
-                        }}
-                      >
-                        <SmartToyIcon />
-                      </Avatar>
-                      <Paper 
-                        sx={{ 
-                          maxWidth: '80%',
-                          p: 2, 
-                          bgcolor: 'white',
-                          borderRadius: '16px 16px 16px 0',
-                          ...markdownStyles
-                        }}
-                      >
-                        <Box className="markdown-content">
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                              p: ({node, ...props}) => (
-                                <Typography 
-                                  variant="body1" 
-                                  component="p"
-                                  sx={{ mb: 1.5, lineHeight: 1.6 }} 
-                                  {...props} 
-                                />
-                              ),
-                              a: ({node, ...props}) => (
-                                <MuiLink 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  color="primary"
-                                  sx={{
-                                    fontWeight: 500,
-                                    '&:hover': {
-                                      textDecoration: 'underline'
-                                    }
-                                  }}
-                                  {...props} 
-                                />
-                              ),
-                              img: ({node, ...props}) => (
-                                <img 
-                                  style={{
-                                    maxWidth: '100%',
-                                    height: 'auto',
-                                    display: 'block',
-                                    margin: '16px 0',
-                                    borderRadius: '4px'
-                                  }} 
-                                  {...props} 
-                                />
-                              ),
-                              pre: ({node, ...props}) => (
-                                <Paper 
-                                  elevation={0}
-                                  sx={{ 
-                                    bgcolor: 'rgba(0,0,0,0.04)', 
-                                    p: 1.5, 
-                                    borderRadius: 1,
-                                    mb: 2,
-                                    overflow: 'auto'
-                                  }}
-                                  {...props}
-                                />
-                              ),
-                              code: ({node, inline, ...props}) => (
-                                inline ? 
-                                <Typography 
-                                  component="code"
-                                  sx={{ 
-                                    bgcolor: 'rgba(0,0,0,0.04)', 
-                                    p: 0.3, 
-                                    borderRadius: 0.5,
-                                    fontFamily: 'monospace'
-                                  }}
-                                  {...props}
-                                /> :
-                                <Typography 
-                                  component="code"
-                                  sx={{ 
-                                    display: 'block',
-                                    fontFamily: 'monospace',
-                                    fontSize: '0.875rem'
-                                  }}
-                                  {...props}
-                                />
-                              ),
-                              ul: ({node, ...props}) => (
-                                <Box
-                                  component="ul"
-                                  sx={{
-                                    pl: 3,
-                                    mb: 2,
-                                    '& li': {
-                                      mb: 0.8,
-                                      pl: 0.5,
-                                      '&::marker': {
-                                        color: 'primary.main'
-                                      }
-                                    }
-                                  }}
-                                  {...props}
-                                />
-                              ),
-                              ol: ({node, ...props}) => (
-                                <Box
-                                  component="ol"
-                                  sx={{
-                                    pl: 3,
-                                    mb: 2,
-                                    '& li': {
-                                      mb: 0.8,
-                                      pl: 0.5
-                                    }
-                                  }}
-                                  {...props}
-                                />
-                              ),
-                              h3: ({node, ...props}) => (
-                                <Typography 
-                                  variant="h6"
-                                  component="h3"
-                                  sx={{ 
-                                    color: 'primary.dark',
-                                    fontWeight: 600,
-                                    mt: 3,
-                                    mb: 1.5
-                                  }}
-                                  {...props}
-                                />
-                              ),
-                              h4: ({node, ...props}) => (
-                                <Typography 
-                                  variant="subtitle1"
-                                  component="h4"
-                                  sx={{ 
-                                    color: 'primary.dark',
-                                    fontWeight: 600,
-                                    mt: 2,
-                                    mb: 1
-                                  }}
-                                  {...props}
-                                />
-                              ),
-                              table: ({node, ...props}) => (
-                                <Box
-                                  sx={{
-                                    overflowX: 'auto',
-                                    mb: 2
-                                  }}
-                                >
-                                  <Box
-                                    component="table"
-                                    sx={{
-                                      width: '100%',
-                                      borderCollapse: 'collapse',
-                                      border: '1px solid',
-                                      borderColor: 'grey.300',
-                                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                                    }}
-                                    {...props}
-                                  />
-                                </Box>
-                              ),
-                              th: ({node, ...props}) => (
-                                <Box
-                                  component="th"
-                                  sx={{
-                                    border: '1px solid',
-                                    borderColor: 'grey.300',
-                                    p: 1.5,
-                                    bgcolor: 'grey.50',
-                                    fontWeight: 'bold',
-                                    textAlign: 'left'
-                                  }}
-                                  {...props}
-                                />
-                              ),
-                              td: ({node, ...props}) => (
-                                <Box
-                                  component="td"
-                                  sx={{
-                                    border: '1px solid',
-                                    borderColor: 'grey.300',
-                                    p: 1.5
-                                  }}
-                                  {...props}
-                                />
-                              )
-                            }}
-                          >
-                            {message.content}
-                          </ReactMarkdown>
-                        </Box>
-                      </Paper>
-                    </Box>
-                  )}
-                </Box>
-              </Fade>
-            ))
-          )}
-          <div ref={chatEndRef} />
-        </Box>
 
-        {/* Input Area */}
-        <Box 
-          sx={{ 
-            p: 2, 
-            bgcolor: 'background.paper',
-            borderTop: '1px solid rgba(0,0,0,0.08)'
-          }}
-        >
-          {drugInfo && (
-            <>
-              {/* Suggested Questions */}
-              <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {suggestedQuestions.map((question, index) => (
-                  <Chip
-                    key={index}
-                    label={question}
-                    onClick={() => handleSuggestedQuestionClick(question)}
-                    color="primary"
-                    variant="outlined"
-                    sx={{ cursor: 'pointer' }}
-                  />
-                ))}
-              </Box>
-              
-              {/* Input Field */}
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  placeholder="Nhập câu hỏi của bạn..."
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  disabled={loading}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 3,
-                    }
-                  }}
-                />
+              {!drugInfo && (
                 <Button
                   variant="contained"
-                  color="primary"
-                  onClick={handleSendQuestion}
-                  disabled={loading || !userInput.trim()}
-                  sx={{ borderRadius: 3, px: 3 }}
+                  onClick={handleSelectDrug}
+                  startIcon={<SearchIcon />}
+                  sx={{ mt: 2 }}
                 >
-                  {loading ? (
-                    <CircularProgress size={24} color="inherit" />
-                  ) : (
-                    <SendIcon />
-                  )}
+                  Chọn thuốc để tiếp tục
                 </Button>
-              </Box>
+              )}
+
+              {drugInfo && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Gợi ý câu hỏi:
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
+                    {suggestedQuestions.map((question, index) => (
+                      <Chip
+                        key={index}
+                        label={question}
+                        onClick={() => handleSuggestedQuestionClick(question)}
+                        color="primary"
+                        variant="outlined"
+                        sx={{ 
+                          cursor: 'pointer',
+                          width: '100%',
+                          justifyContent: 'flex-start',
+                          py: 0.5
+                        }}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          ) : (
+            // Hiển thị các tin nhắn
+            <>
+              {messages.map((msg, index) => (
+                <MessageBubble 
+                  key={index} 
+                  isUser={msg.isUser || msg.sender === 'user'}
+                  message={msg.text || msg.content}
+                  timestamp={msg.timestamp ? formatTimestamp(msg.timestamp) : ''}
+                />
+              ))}
+              <div ref={messagesEndRef} />
+              
+              {/* Hiển thị gợi ý câu hỏi sau khi có phản hồi */}
+              {messages.length > 0 && (messages[messages.length - 1].isUser === false || messages[messages.length - 1].sender === 'ai') && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1, justifyContent: 'center' }}>
+                  {suggestedQuestions.slice(0, 3).map((question, index) => (
+                    <Chip
+                      key={index}
+                      label={question}
+                      onClick={() => handleSuggestedQuestionClick(question)}
+                      color="primary"
+                      variant="outlined"
+                      sx={{ cursor: 'pointer' }}
+                    />
+                  ))}
+                </Box>
+              )}
             </>
           )}
+          
+          {error && (
+            <Box sx={{ 
+              p: 2, 
+              mt: 2, 
+              bgcolor: 'error.50', 
+              color: 'error.main',
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'error.light'
+            }}>
+              <Typography variant="body2">{error}</Typography>
+            </Box>
+          )}
+          
+          {loading && (
+            <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+              <CircularProgress size={20} sx={{ mr: 2 }} />
+              <Typography variant="body2" color="text.secondary">
+                AI đang soạn tin nhắn...
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+        {/* Khu vực nhập liệu */}
+        <Box 
+          sx={{ 
+            p: 2,
+            bgcolor: 'background.paper',
+            borderTop: '1px solid',
+            borderColor: 'divider'
+          }}
+        >
+          <Box 
+            component="form" 
+            onSubmit={handleSendMessage}
+            sx={{ 
+              display: 'flex',
+              alignItems: 'flex-end',
+              gap: 1
+            }}
+          >
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder={drugInfo 
+                ? `Hỏi về thuốc ${drugInfo.name || drugInfo.brand_name || drugInfo.generic_name}...` 
+                : "Chọn thuốc để bắt đầu..."
+              }
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={loading || !drugInfo}
+              multiline
+              maxRows={4}
+              InputProps={{
+                sx: {
+                  borderRadius: 10,
+                }
+              }}
+            />
+            <Tooltip title="Gửi câu hỏi">
+              <span>
+                <IconButton
+                  color="primary"
+                  disabled={loading || !input.trim() || !drugInfo}
+                  type="submit"
+                  sx={{
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: 'primary.dark',
+                    },
+                    '&.Mui-disabled': {
+                      bgcolor: 'action.disabledBackground',
+                      color: 'action.disabled',
+                    },
+                    width: 48,
+                    height: 48,
+                  }}
+                >
+                  {loading ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
         </Box>
       </Paper>
 
+      {/* Dialog cho lịch sử chat */}
+      <Dialog
+        open={openChatDialog}
+        onClose={() => setOpenChatDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <HistoryIcon sx={{ mr: 1.5 }} />
+            <Typography variant="h6">Lịch sử chat</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress size={40} />
+            </Box>
+          ) : chatHistory.length === 0 ? (
+            <Box sx={{ py: 3, textAlign: 'center', color: 'text.secondary' }}>
+              <Typography>Chưa có lịch sử chat nào</Typography>
+            </Box>
+          ) : (
+            <List sx={{ pt: 0 }}>
+              {chatHistory.map((item, index) => (
+                <ListItem
+                  key={item._id || index}
+                  button
+                  onClick={() => {
+                    // Xử lý khi click vào một mục lịch sử
+                    if (item.drugInfo) {
+                      setDrugInfo(item.drugInfo);
+                    }
+                    if (item.messages && item.messages.length > 0) {
+                      setMessages(item.messages);
+                    }
+                    setOpenChatDialog(false);
+                  }}
+                  sx={{
+                    py: 1.5,
+                    px: 2,
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    '&:hover': {
+                      bgcolor: 'action.hover'
+                    }
+                  }}
+                >
+                  <ListItemIcon>
+                    <MedicalServicesIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.drugQuery || "Chat chưa có tên"}
+                    secondary={item.timestamp ? formatTimestamp(item.timestamp) : ''}
+                  />
+                  <IconButton 
+                    edge="end" 
+                    color="error"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteChatItem(item._id);
+                    }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setOpenChatDialog(false)}
+          >
+            Đóng
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              setInput('');
+              setOpenChatDialog(false);
+            }}
+          >
+            Tạo chat mới
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Dialog tìm kiếm thuốc */}
-      <DrugSearchDialog 
+      <DrugSearchDialog
         open={openDrugSearchDialog}
         onClose={handleCloseDrugSearchDialog}
         onSelectDrug={handleDrugSelected}
@@ -1107,8 +930,12 @@ const ChatWithAI = () => {
         open={openSnackbar}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        message={error}
-      />
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

@@ -52,6 +52,7 @@ import {
   PlaylistAddCheckOutlined as PlaylistAddCheckOutlinedIcon, // For Instructions
   ReportProblemOutlined as ReportProblemOutlinedIcon, // For Precautions
   FactoryOutlined as FactoryOutlinedIcon, // For Manufacturer Info
+  Chat as ChatIcon, // Thêm icon Chat
 } from '@mui/icons-material';
 import axiosInstance from '../axios-config'; // Assuming this is correctly configured
 
@@ -195,8 +196,6 @@ const PharmacyProductDetail = () => {
   const handleImageSelect = (index) => {
     setSelectedImage(index);
   };
-
-
 
   // Format price - improved robustness
   const formatPrice = (price) => {
@@ -447,6 +446,24 @@ const PharmacyProductDetail = () => {
             </Table>
           </TableContainer>
 
+          {/* Thêm nút Chat với AI */}
+          <Button 
+            variant="contained" 
+            color="primary" 
+            startIcon={<ChatIcon />}
+            onClick={() => navigate('/chat-with-ai', { state: { drugInfo: product } })}
+            sx={{ 
+              mb: 2,
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              textTransform: 'none',
+              fontWeight: 'medium',
+            }}
+          >
+            Chat với AI về thuốc này
+          </Button>
+
           {/* Medical disclaimer - centered width */}
           <Box sx={{
             mt: isMobile ? 1 : 2,
@@ -466,6 +483,23 @@ const PharmacyProductDetail = () => {
           </Box>
         </Grid>
       </Grid>
+    );
+  };
+
+  const renderActionsButtons = () => {
+    return (
+      <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          size="large"
+          startIcon={<ChatIcon />}
+          onClick={() => navigate('/chat', { state: { drugInfo: product } })}
+          fullWidth
+        >
+          Chat với AI
+        </Button>
+      </Box>
     );
   };
 
@@ -763,6 +797,8 @@ const PharmacyProductDetail = () => {
                 )}
             </TabPanel>
           </Paper>
+
+          {renderActionsButtons()}
         </>
       ) : null}
     </Container>
