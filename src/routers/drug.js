@@ -183,4 +183,27 @@ router.delete('/search-history/:searchId', authMiddleware, drugController.delete
  */
 router.get('/drug-events', authMiddleware, drugController.searchDrugEvents);
 
+/**
+ * @swagger
+ * /api/drug/pharmacity/search:
+ *   get:
+ *     summary: Tìm kiếm thuốc từ Pharmacity
+ *     description: Tìm kiếm thông tin thuốc từ Pharmacity
+ *     parameters:
+ *       - in: query
+ *         name: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Từ khóa tìm kiếm thuốc
+ *     responses:
+ *       200:
+ *         description: Dữ liệu thuốc trả về thành công
+ *       400:
+ *         description: Thiếu từ khóa tìm kiếm
+ *       500:
+ *         description: Lỗi server
+ */
+router.get('/pharmacity/search', drugController.searchPharmacityDrugs);
+
 module.exports = router;

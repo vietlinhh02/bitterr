@@ -49,6 +49,14 @@ const API = axios.create({
   }
 });
 
+// Cấu hình API Pharmacity
+const PHARMACITY_API = axios.create({
+  baseURL: 'https://www.pharmacity.vn',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
 // Thêm interceptor để đính kèm token vào mỗi request
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem('token');
@@ -82,6 +90,34 @@ API.interceptors.response.use(
 // API tìm kiếm thuốc từ FDA
 export const searchFDADrugs = (keyword) => API.get(`/drug/search?query=${keyword}`);
 
+// API tìm kiếm thuốc từ Pharmacity
+export const searchPharmacityDrugs = async (keyword) => {
+  const cacheKey = `pharmacity_search_${keyword}`;
+  const cachedData = checkCache(cacheKey, 5 * 60 * 1000); // Cache 5 phút
+  
+  if (cachedData) {
+    return { data: cachedData };
+  }
+  
+  return throttleRequest(cacheKey, async () => {
+    try {
+      // Gọi API backend để proxy request đến Pharmacity
+      const response = await API.get(`/drug/pharmacity/search?query=${encodeURIComponent(keyword)}`);
+      
+      if (response.data) {
+        saveCache(cacheKey, response.data);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Lỗi khi tìm kiếm thuốc Pharmacity:', error);
+      
+      // Thông báo cho người dùng về việc cần backend proxy
+      throw new Error('Không thể kết nối với API Pharmacity. Backend proxy chưa được cấu hình đúng.');
+    }
+  });
+};
+
 // API tìm kiếm sự kiện thuốc từ FDA
 export const searchDrugEvents = (params) => {
   // Xây dựng query string từ các tham số
@@ -106,6 +142,12 @@ export const saveDrugSearchHistory = (searchData) => API.post('/drug/save-search
 export const saveLongChauSearchHistory = (searchData) => API.post('/drug/save-search-history', {
   ...searchData,
   source: 'longchau'
+});
+
+// API lưu lịch sử tìm kiếm Pharmacity
+export const savePharmacitySearchHistory = (searchData) => API.post('/drug/save-search-history', {
+  ...searchData,
+  source: 'pharmacity'
 });
 
 // API xóa một mục trong lịch sử tìm kiếm thuốc

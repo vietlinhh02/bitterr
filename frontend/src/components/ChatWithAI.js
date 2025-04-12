@@ -6,19 +6,21 @@ import {
   Container, Paper, Typography, TextField, Button, Box, CircularProgress, IconButton,
   Divider, Chip, Avatar, Tooltip, Fade, Alert, Snackbar, Link as MuiLink, Menu, MenuItem,
   ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, List,
-  ListItem, useTheme, AppBar, Toolbar,
-  Grid, // Import Grid for layout
-  Drawer, // Potentially use Drawer for a responsive sidebar later
-  ListSubheader // For sidebar structure
+  ListItem, useTheme, AppBar, Toolbar, useMediaQuery, Drawer, Fab,
+  Grid, 
+  SwipeableDrawer,
+  ListSubheader 
 } from '@mui/material';
 import {
   Send as SendIcon, Delete as DeleteIcon, SmartToy as SmartToyIcon, Person as PersonIcon,
   MedicalServices as MedicalServicesIcon, ArrowBack as ArrowBackIcon, QuestionAnswer as QuestionAnswerIcon,
   History as HistoryIcon, Add as AddIcon, Menu as MenuIcon, Search as SearchIcon,
   Error as ErrorIcon, Close as CloseIcon, Lightbulb as LightbulbIcon,
-  Settings as SettingsIcon, // Example icon for placeholder sidebar
-  HelpOutline as HelpOutlineIcon, // Example icon
-  Chat as ChatIcon // Example icon
+  Settings as SettingsIcon, 
+  HelpOutline as HelpOutlineIcon, 
+  Chat as ChatIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon
 } from '@mui/icons-material';
 import { askGeminiAboutDrug, getChatHistory, deleteChatHistoryItem } from '../services/api';
 import ReactMarkdown from 'react-markdown';
@@ -53,6 +55,12 @@ const ChatWithAI = () => {
   const [openDrugSearchDialog, setOpenDrugSearchDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [showChatHistory, setShowChatHistory] = useState(true);
+  
+  // Kiểm tra kích thước màn hình
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  // Trạng thái drawer khi ở mobile
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  
   const [suggestedQuestions, setSuggestedQuestions] = useState([
     "Tác dụng phụ thường gặp là gì?",
     "Liều dùng cho người lớn?",
@@ -60,6 +68,15 @@ const ChatWithAI = () => {
     "Có cần lưu ý gì khi sử dụng?",
     "Khi nào nên ngưng dùng thuốc?",
   ]);
+
+  // Ẩn lịch sử chat khi chuyển sang mobile
+  useEffect(() => {
+    if (isMobile) {
+      setShowChatHistory(false);
+    } else {
+      setShowChatHistory(true);
+    }
+  }, [isMobile]);
 
   const scrollToBottom = () => { 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); 
@@ -85,11 +102,11 @@ const ChatWithAI = () => {
     }
   }, [drugInfo, messages, openDrugSearchDialog, openChatDialog, openSnackbar]);
 
-  useEffect(() => {
-    const currentDrugInfo = location.state?.drugInfo || drugInfo;
+    useEffect(() => {
+        const currentDrugInfo = location.state?.drugInfo || drugInfo;
     
-    if (currentDrugInfo) {
-      setDrugInfo(currentDrugInfo);
+        if (currentDrugInfo) {
+            setDrugInfo(currentDrugInfo);
       
       const welcomeMsg = createWelcomeMessage(currentDrugInfo);
       
@@ -99,12 +116,12 @@ const ChatWithAI = () => {
       } else if (messages.length === 0 && !location.state?.drugInfo) {
         setMessages([welcomeMsg]);
       }
-    } else if (messages.length === 0) {
+        } else if (messages.length === 0) {
       const welcomeMsg = createWelcomeMessage(null);
-      setMessages([welcomeMsg]);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state?.drugInfo]);
+            setMessages([welcomeMsg]);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.state?.drugInfo]);
 
   const handleSendMessage = async (e) => { 
     e?.preventDefault(); 
@@ -172,6 +189,10 @@ const ChatWithAI = () => {
     } finally {
       setLoading(false);
       setTimeout(scrollToBottom, 100);
+      // Đóng drawer nếu đang ở chế độ mobile khi gửi tin nhắn
+      if (isMobile && drawerOpen) {
+        setDrawerOpen(false);
+      }
     }
   };
 
@@ -190,9 +211,9 @@ const ChatWithAI = () => {
     }, 0);
   };
 
-  const handleSelectDrug = () => setOpenDrugSearchDialog(true);
+    const handleSelectDrug = () => setOpenDrugSearchDialog(true);
   
-  const handleCloseDrugSearchDialog = () => setOpenDrugSearchDialog(false);
+    const handleCloseDrugSearchDialog = () => setOpenDrugSearchDialog(false);
   
   const handleDrugSelected = (selectedDrug) => {
     setDrugInfo(selectedDrug);
@@ -212,7 +233,7 @@ const ChatWithAI = () => {
     setError(null);
   };
   
-  const handleCloseSnackbar = () => setOpenSnackbar(false);
+    const handleCloseSnackbar = () => setOpenSnackbar(false);
   
   const handleLoadChatFromHistory = (chatItem) => {
     if (chatItem.drugInfo) {
@@ -267,6 +288,11 @@ const ChatWithAI = () => {
     setInput('');
     setError(null);
     setTimeout(scrollToBottom, 100);
+    
+    // Đóng drawer nếu đang ở chế độ mobile sau khi chọn cuộc trò chuyện
+    if (isMobile) {
+      setDrawerOpen(false);
+    }
   };
 
   const handleNewChat = () => {
@@ -275,40 +301,54 @@ const ChatWithAI = () => {
     setInput('');
     setError(null);
     handleSelectDrug();
+    
+    // Đóng drawer nếu đang ở chế độ mobile
+    if (isMobile) {
+      setDrawerOpen(false);
+    }
   };
+
+  // Nội dung lịch sử chat
+  const chatHistoryContent = (
+    <ChatHistory 
+      onSelectChat={handleLoadChatFromHistory}
+      onNewChat={handleNewChat}
+      formatTimestamp={formatTimestamp}
+    />
+  );
 
   return (
     <Container maxWidth="xl" sx={{ py: 1 }}>
       <Grid container spacing={2} sx={{ height: 'calc(100vh - 120px)' }}>
-        {/* Lịch sử trò chuyện ở bên trái */}
-        <Grid item xs={12} sm={3} sx={{ display: { xs: showChatHistory ? 'block' : 'none', sm: 'block' }, height: '100%' }}>
-          <ChatHistory 
-            onSelectChat={handleLoadChatFromHistory}
-            onNewChat={handleNewChat}
-            formatTimestamp={formatTimestamp}
-          />
-        </Grid>
+        {/* Lịch sử trò chuyện ở bên trái - hiển thị trên desktop */}
+        {!isMobile && (
+          <Grid item xs={12} sm={3} sx={{ height: '100%' }}>
+            {chatHistoryContent}
+          </Grid>
+        )}
         
         {/* Khu vực chat ở bên phải */}
         <Grid item xs={12} sm={9} sx={{ height: '100%' }}>
-          <Paper 
-            elevation={3} 
-            sx={{ 
-              borderRadius: 2, 
-              overflow: 'hidden',
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          borderRadius: 2, 
+          overflow: 'hidden',
               height: '100%',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
-          >
-            {/* Header */}
+          display: 'flex',
+              flexDirection: 'column',
+              position: 'relative'
+        }}
+      >
+        {/* Header */}
             <ChatHeader 
               drugInfo={drugInfo}
               navigate={navigate}
               anchorEl={anchorEl}
               setAnchorEl={setAnchorEl}
               handleSelectDrug={handleSelectDrug}
-              openHistoryDialog={() => setShowChatHistory(prev => !prev)}
+              openHistoryDialog={() => isMobile ? setDrawerOpen(true) : null}
+              isMobile={isMobile}
             />
             
             {/* Thông tin thuốc */}
@@ -336,9 +376,55 @@ const ChatWithAI = () => {
               drugInfo={drugInfo}
               handleKeyPress={handleKeyPress}
             />
+            
+            {/* Nút hiển thị lịch sử chat trên mobile */}
+            {isMobile && (
+              <Fab 
+                      color="primary"
+                size="medium"
+                onClick={() => setDrawerOpen(true)}
+          sx={{ 
+                  position: 'absolute', 
+                  top: 70, 
+                  left: 16, 
+                  zIndex: 1000,
+                  opacity: 0.8,
+                  '&:hover': {
+                    opacity: 1
+                  }
+                }}
+              >
+                <HistoryIcon />
+              </Fab>
+            )}
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Drawer lịch sử chat cho mobile */}
+      <SwipeableDrawer
+        anchor="left"
+        open={isMobile && drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onOpen={() => setDrawerOpen(true)}
+            sx={{ 
+          '& .MuiDrawer-paper': { 
+            width: '85%', 
+            maxWidth: 350,
+            boxSizing: 'border-box',
+            height: '100%'
+          }
+        }}
+      >
+        <Box sx={{ height: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
+            <IconButton onClick={() => setDrawerOpen(false)}>
+              <ChevronLeftIcon />
+                </IconButton>
+          </Box>
+          {chatHistoryContent}
+        </Box>
+      </SwipeableDrawer>
 
       {/* Dialog tìm kiếm thuốc */}
       <DrugSearchDialog

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, IconButton, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, Typography, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Badge } from '@mui/material';
 import { 
   ArrowBack as ArrowBackIcon, 
   Menu as MenuIcon, 
@@ -13,7 +13,8 @@ const ChatHeader = ({
   anchorEl, 
   setAnchorEl, 
   handleSelectDrug, 
-  openHistoryDialog 
+  openHistoryDialog,
+  isMobile
 }) => {
   return (
     <Box 
@@ -35,6 +36,20 @@ const ChatHeader = ({
         >
           <ArrowBackIcon />
         </IconButton>
+        
+        {/* Thêm nút hiển thị lịch sử trên mobile */}
+        {isMobile && (
+          <IconButton 
+            color="inherit" 
+            onClick={openHistoryDialog}
+            sx={{ mr: 1 }}
+          >
+            <Badge color="secondary" variant="dot" invisible={!drugInfo}>
+              <HistoryIcon />
+            </Badge>
+          </IconButton>
+        )}
+        
         <Box>
           <Typography variant="h7" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
             Chat với AI
@@ -61,15 +76,17 @@ const ChatHeader = ({
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
-          <MenuItem onClick={() => {
-            setAnchorEl(null);
-            openHistoryDialog();
-          }}>
-            <ListItemIcon>
-              <HistoryIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Lịch sử chat</ListItemText>
-          </MenuItem>
+          {!isMobile && (
+            <MenuItem onClick={() => {
+              setAnchorEl(null);
+              openHistoryDialog();
+            }}>
+              <ListItemIcon>
+                <HistoryIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Lịch sử chat</ListItemText>
+            </MenuItem>
+          )}
           <MenuItem onClick={() => {
             setAnchorEl(null);
             handleSelectDrug();
