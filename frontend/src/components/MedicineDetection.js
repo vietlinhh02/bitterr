@@ -597,42 +597,111 @@ const MedicineDetection = () => {
       {/* Hiển thị kết quả từ nhà thuốc */}
       {pharmacyResults && pharmacyResults.length > 0 && (
         <Grid item xs={12}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <Paper sx={{ p: 3, mt: 3, borderRadius: 2, boxShadow: 3 }}>
+            <Typography variant="h6" gutterBottom sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              color: '#1976d2',
+              fontWeight: 'bold',
+              pb: 1,
+              borderBottom: '1px solid #e0e0e0'
+            }}>
+              <LocalPharmacyIcon sx={{ mr: 1 }} />
               Sản phẩm tại nhà thuốc
             </Typography>
-            <Grid container spacing={2}>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
               {pharmacyResults.map((item, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
-                  <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    {item.image && (
-                      <CardMedia
-                        component="img"
-                        image={item.image}
-                        alt={item.name}
-                        sx={{ height: 200, objectFit: 'contain', p: 1 }}
-                      />
-                    )}
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography variant="h6" component="div" noWrap title={item.name}>
+                <Grid item xs={12} sm={6} md={3} key={index}>
+                  <Card sx={{ 
+                    height: '100%', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateY(-5px)',
+                      boxShadow: 5,
+                    }
+                  }}>
+                    <Box sx={{ position: 'relative', pt: '100%', overflow: 'hidden' }}>
+                      {item.thumbnail && item.thumbnail.image_url ? (
+                        <CardMedia
+                          component="img"
+                          image={item.thumbnail.image_url}
+                          alt={item.name}
+                          sx={{ 
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain',
+                            p: 2
+                          }}
+                        />
+                      ) : (
+                        <Box sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: '#f5f5f5'
+                        }}>
+                          <LocalPharmacyIcon sx={{ fontSize: 60, color: '#bdbdbd' }} />
+                        </Box>
+                      )}
+                    </Box>
+                    <CardContent sx={{ flexGrow: 1, pt: 2 }}>
+                      <Typography 
+                        variant="h6" 
+                        component="div" 
+                        sx={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          lineHeight: 1.3,
+                          height: '2.6em',
+                          fontWeight: 'medium'
+                        }}
+                        title={item.name}
+                      >
                         {item.name}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        {item.brand}
-                      </Typography>
-                      <Typography variant="h6" color="primary" sx={{ mt: 1 }}>
-                        {formatPrice(item.price)}
-                      </Typography>
+                      {item.brand_name && (
+                        <Typography 
+                          variant="body2" 
+                          color="text.secondary" 
+                          gutterBottom
+                          sx={{ mt: 1 }}
+                        >
+                          {item.brand_name}
+                        </Typography>
+                      )}
+                    </CardContent>
+                    <Box sx={{ p: 2, pt: 0 }}>
                       <Button
                         variant="contained"
                         color="primary"
                         fullWidth
-                        sx={{ mt: 2 }}
                         onClick={() => navigate(`/pharmacy-product/${item.slug}`)}
+                        sx={{
+                          borderRadius: 2,
+                          py: 1,
+                          boxShadow: 2,
+                          bgcolor: '#2196f3',
+                          '&:hover': {
+                            bgcolor: '#1976d2'
+                          }
+                        }}
                       >
                         Xem chi tiết
                       </Button>
-                    </CardContent>
+                    </Box>
                   </Card>
                 </Grid>
               ))}
