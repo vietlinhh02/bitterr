@@ -1,150 +1,220 @@
 const geminiService = require('../services/geminiService');
 const ChatHistory = require('../models/ChatHistory');
 
+// Hàm loại bỏ tất cả thẻ HTML từ chuỗi
+const stripHtml = (html) => {
+  if (!html || typeof html !== 'string') return '';
+  
+  // Loại bỏ tất cả các thẻ HTML
+  let text = html.replace(/<[^>]*>/g, '');
+  
+  // Xử lý các thực thể HTML phổ biến
+  text = text.replace(/&nbsp;/g, ' ')
+             .replace(/&amp;/g, '&')
+             .replace(/&lt;/g, '<')
+             .replace(/&gt;/g, '>')
+             .replace(/&quot;/g, '"')
+             .replace(/&#39;/g, "'");
+  
+  // Loại bỏ nhiều khoảng trắng liên tiếp và trim
+  return text.replace(/\s+/g, ' ').trim();
+};
+
+// Hàm để xử lý tất cả các trường trong đối tượng, loại bỏ HTML nếu là chuỗi
+const sanitizeObject = (obj) => {
+  if (!obj || typeof obj !== 'object') return obj;
+  
+  const result = { ...obj };
+  
+  // Xử lý từng trường trong đối tượng
+  Object.keys(result).forEach(key => {
+    if (typeof result[key] === 'string') {
+      // Nếu tên trường có chứa "Html", hoặc chứa nội dung HTML
+      if (key.includes('Html') || result[key].includes('<')) {
+        result[key] = stripHtml(result[key]);
+      }
+    } else if (typeof result[key] === 'object' && result[key] !== null) {
+      // Đệ quy xử lý các đối tượng con
+      result[key] = sanitizeObject(result[key]);
+    }
+  });
+  
+  return result;
+};
+
 const askAboutDrug = async (req, res) => {
   try {
     console.log('Request body:', req.body);
     
-    // Kiểm tra định dạng dữ liệu
-    if (req.body.messages && Array.isArray(req.body.messages) && req.body.drugInfo) {
-      // Định dạng mới với messages và drugInfo
-      const { messages, drugInfo, drugQuery } = req.body;
+    // Kiểm tra cấu trúc dữ liệu để xác định nguồn gốc
+    if (req.body.drugInfo) {
+      // Trường hợp trực tiếp từ trang chi tiết
+      const { drugInfo, question, createHistory } = req.body;
       
-      // Đảm bảo tất cả các trường đều có giá trị mặc định
-      const defaultDrugInfo = {
-        brand_name: drugInfo.brand_name || 'Không có tên',
-        generic_name: drugInfo.generic_name || 'Không có tên',
-        active_ingredient: drugInfo.active_ingredient || 'Không có thông tin',
-        indications_and_usage: drugInfo.indications_and_usage || 'Không có thông tin',
-        warnings: drugInfo.warnings || 'Không có thông tin',
-        dosage_and_administration: drugInfo.dosage_and_administration || 'Không có thông tin',
-        adverse_reactions: drugInfo.adverse_reactions || 'Không có thông tin'
+      // Làm sạch dữ liệu, loại bỏ các thẻ HTML
+      const sanitizedDrugInfo = sanitizeObject(drugInfo);
+      const drugQuery = sanitizedDrugInfo.generic_name || sanitizedDrugInfo.name || sanitizedDrugInfo.brand_name || 'Không có tên';
+      
+      // Thay đổi cách tạo productInfo để giữ lại toàn bộ thông tin thuốc
+      const productInfo = {
+        // Các trường thông tin cơ bản được lấy từ drugInfo
+        name: sanitizedDrugInfo.name || sanitizedDrugInfo.generic_name || sanitizedDrugInfo.brand_name || 'Không có tên',
+        description: sanitizedDrugInfo.description || 
+                    (sanitizedDrugInfo.details?.description) || 
+                    sanitizedDrugInfo.indications_and_usage || 
+                    'Không có thông tin',
+        ingredients: sanitizedDrugInfo.ingredients || 
+                    sanitizedDrugInfo.active_ingredient || 
+                    (sanitizedDrugInfo.details?.ingredients) || 
+                    'Không có thông tin',
+        usage: sanitizedDrugInfo.usage || 
+              (sanitizedDrugInfo.details?.indications) || 
+              sanitizedDrugInfo.indications_and_usage || 
+              'Không có thông tin',
+        dosage: sanitizedDrugInfo.dosage || 
+                (sanitizedDrugInfo.details?.dosage) || 
+                sanitizedDrugInfo.dosage_and_administration || 
+                'Không có thông tin',
+        adverseEffect: sanitizedDrugInfo.adverseEffect || 
+                      (sanitizedDrugInfo.details?.side_effects) || 
+                      sanitizedDrugInfo.adverse_reactions || 
+                      'Không có thông tin',
+        careful: sanitizedDrugInfo.careful || 
+                sanitizedDrugInfo.warnings || 
+                (sanitizedDrugInfo.details?.warnings) || 
+                'Không có thông tin',
+        preservation: sanitizedDrugInfo.preservation || 
+                      (sanitizedDrugInfo.details?.storage) || 
+                      'Bảo quản ở nơi khô ráo, tránh ánh nắng trực tiếp',
+        brand: sanitizedDrugInfo.brand || 
+              sanitizedDrugInfo.brand_name || 
+              (sanitizedDrugInfo.details?.brand) || 
+              (sanitizedDrugInfo.manufacturer?.name) || 
+              'Không có thông tin',
+        category: sanitizedDrugInfo.category || 
+                  (sanitizedDrugInfo.details?.category) || 
+                  'Không có thông tin',
+        price: sanitizedDrugInfo.price?.formattedValue || sanitizedDrugInfo.price || 'Không có thông tin',
+        
+        // Thêm tất cả dữ liệu gốc từ drugInfo và details
+        ...sanitizedDrugInfo,
+        
+        // Thêm phần details để AI có thể truy cập tất cả dữ liệu chi tiết
+        fullDetails: {
+          ...sanitizedDrugInfo,
+          details: sanitizedDrugInfo.details || {},
+          manufacturer: sanitizedDrugInfo.manufacturer || {}
+        }
       };
-      
-      // Lấy câu hỏi cuối cùng từ messages
-      const lastUserMessage = messages.filter(msg => msg.role === 'user').pop();
-      if (!lastUserMessage) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'Không tìm thấy câu hỏi của người dùng trong messages'
-        });
-      }
-      
-      const question = lastUserMessage.content;
-      
-      console.log('Calling Gemini service with new format:', { drugInfo: defaultDrugInfo, question });
-      const answer = await geminiService.askGeminiWithFDA({ 
-        productInfo: {
-          name: defaultDrugInfo.brand_name || defaultDrugInfo.generic_name,
-          description: defaultDrugInfo.indications_and_usage,
-          ingredients: defaultDrugInfo.active_ingredient,
-          usage: defaultDrugInfo.indications_and_usage,
-          dosage: defaultDrugInfo.dosage_and_administration,
-          adverseEffect: defaultDrugInfo.adverse_reactions,
-          careful: defaultDrugInfo.warnings,
-          preservation: 'Không có thông tin',
-          brand: defaultDrugInfo.brand_name,
-          category: 'Thuốc',
-          price: 'Không có thông tin',
-          url: 'FDA/Long Châu Database'
-        }, 
-        question 
+
+      console.log('Đã chuyển đổi thành công dữ liệu thuốc cho Gemini:', productInfo.name);
+      const answer = await geminiService.askGeminiWithFDA({
+        productInfo,
+        question,
+        messages: req.body.messages || [],
+        fullDrugInfo: sanitizedDrugInfo // Gửi toàn bộ dữ liệu gốc đã được loại bỏ HTML
       });
       
-      // Lưu vào lịch sử chat nếu người dùng đã đăng nhập
-      if (req.user && req.user.id) {
+      // Lưu vào lịch sử chat nếu người dùng đã đăng nhập và createHistory không phải false
+      if (req.user && req.user.id && createHistory !== false) {
         try {
-          const newChatHistory = new ChatHistory({
+          // Kiểm tra xem đã có lịch sử chat với drugQuery này chưa
+          const existingChat = await ChatHistory.findOne({
             userId: req.user.id,
-            drugQuery: drugQuery || defaultDrugInfo.brand_name || defaultDrugInfo.generic_name,
-            question,
-            answer
+            drugQuery
           });
-          await newChatHistory.save();
+
+          if (!existingChat) {
+            // Nếu chưa có thì tạo mới
+            const newChatHistory = new ChatHistory({
+              userId: req.user.id,
+              drugQuery,
+              generic_name: sanitizedDrugInfo.generic_name || sanitizedDrugInfo.name,
+              question,
+              answer,
+              drugInfo: {
+                name: sanitizedDrugInfo.name,
+                generic_name: sanitizedDrugInfo.generic_name,
+                brand_name: sanitizedDrugInfo.brand_name || sanitizedDrugInfo.brand
+              }
+            });
+            await newChatHistory.save();
+          } else {
+            // Nếu đã có và câu hỏi khác câu trước thì cập nhật
+            if (existingChat.question !== question) {
+              existingChat.question = question;
+              existingChat.answer = answer;
+              existingChat.timestamp = new Date();
+              await existingChat.save();
+            }
+          }
         } catch (historyError) {
           console.error('Lỗi khi lưu lịch sử chat:', historyError);
         }
       }
       
-      console.log('Sending response:', { success: true, answer });
       return res.status(200).json({
         success: true,
         answer
       });
-      
     } else if (req.body.productInfo && req.body.question) {
-      // Định dạng cũ với productInfo và question
-      const { productInfo, question } = req.body;
+      // Nếu đã có productInfo định dạng chuẩn thì sử dụng trực tiếp
+      const { productInfo, question, createHistory } = req.body;
       
-      if (!productInfo || !question) {
-        console.error('Missing data:', { productInfo, question });
-        return res.status(400).json({ 
-          success: false,
-          message: 'Thiếu thông tin sản phẩm hoặc câu hỏi',
-          details: {
-            hasProductInfo: !!productInfo,
-            hasQuestion: !!question
-          }
-        });
-      }
-
-      // Đảm bảo tất cả các trường đều có giá trị mặc định
-      const defaultProductInfo = {
-        name: productInfo.name || 'Không có tên',
-        description: productInfo.description || 'Không có thông tin',
-        ingredients: productInfo.ingredients || 'Không có thông tin',
-        usage: productInfo.usage || 'Không có thông tin',
-        dosage: productInfo.dosage || 'Không có thông tin',
-        adverseEffect: productInfo.adverseEffect || 'Không có thông tin',
-        careful: productInfo.careful || 'Không có thông tin',
-        preservation: productInfo.preservation || 'Không có thông tin',
-        brand: productInfo.brand || 'Không có thông tin',
-        category: productInfo.category || 'Không có thông tin',
-        price: productInfo.price || 'Không có thông tin',
-        url: productInfo.url || 'Không có thông tin'
-      };
-
-      console.log('Calling Gemini service with old format:', { productInfo: defaultProductInfo, question });
-      const answer = await geminiService.askGeminiWithFDA({ productInfo: defaultProductInfo, question });
+      // Làm sạch dữ liệu, loại bỏ các thẻ HTML
+      const sanitizedProductInfo = sanitizeObject(productInfo);
+      const drugQuery = sanitizedProductInfo.name;
       
-      // Lưu vào lịch sử chat nếu người dùng đã đăng nhập
-      if (req.user && req.user.id) {
+      console.log('Sử dụng trực tiếp productInfo:', sanitizedProductInfo.name);
+      const answer = await geminiService.askGeminiWithFDA({ 
+        productInfo: sanitizedProductInfo, 
+        question,
+        messages: req.body.messages || [] 
+      });
+      
+      // Lưu lịch sử chat
+      if (req.user && req.user.id && createHistory !== false) {
         try {
-          const newChatHistory = new ChatHistory({
+          const existingChat = await ChatHistory.findOne({
             userId: req.user.id,
-            drugQuery: defaultProductInfo.name,
-            question,
-            answer
+            drugQuery
           });
-          await newChatHistory.save();
+
+          if (!existingChat) {
+            const newChatHistory = new ChatHistory({
+              userId: req.user.id,
+              drugQuery,
+              generic_name: sanitizedProductInfo.generic_name || sanitizedProductInfo.name,
+              question,
+              answer
+            });
+            await newChatHistory.save();
+          } else if (existingChat.question !== question) {
+            existingChat.question = question;
+            existingChat.answer = answer;
+            existingChat.timestamp = new Date();
+            await existingChat.save();
+          }
         } catch (historyError) {
           console.error('Lỗi khi lưu lịch sử chat:', historyError);
         }
       }
       
-      console.log('Sending response:', { success: true, answer });
       return res.status(200).json({
         success: true,
         answer
       });
     } else {
       return res.status(400).json({ 
-        success: false,
-        message: 'Định dạng dữ liệu không hợp lệ',
-        details: {
-          hasMessages: !!req.body.messages && Array.isArray(req.body.messages),
-          hasDrugInfo: !!req.body.drugInfo,
-          hasProductInfo: !!req.body.productInfo,
-          hasQuestion: !!req.body.question
-        }
+        success: false, 
+        message: 'Thiếu thông tin cần thiết. Cần có drugInfo hoặc productInfo và question'
       });
     }
-    
   } catch (error) {
     console.error('Lỗi khi xử lý câu hỏi:', error);
     return res.status(500).json({ 
-      success: false,
-      message: 'Đã xảy ra lỗi khi xử lý câu hỏi',
+      success: false, 
+      message: 'Đã xảy ra lỗi khi xử lý câu hỏi', 
       error: error.message
     });
   }

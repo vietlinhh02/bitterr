@@ -17,7 +17,58 @@ const askGeminiWithFDA = async (data) => {
       }
     });
 
-    const { productInfo, question } = data;
+    const { productInfo, question, fullDrugInfo, messages = [] } = data;
+
+    // Chuẩn bị phần mô tả chi tiết thuốc, ưu tiên thông tin từ fullDrugInfo nếu có
+    let detailedDrugInfo = '';
+    if (fullDrugInfo) {
+      // Thêm các thông tin chi tiết từ fullDrugInfo
+      if (fullDrugInfo.details) {
+        const details = fullDrugInfo.details;
+        detailedDrugInfo += `
+## Thông tin chi tiết thuốc
+${details.description ? `- **Mô tả chi tiết**: ${details.description}` : ''}
+${details.ingredients ? `- **Thành phần đầy đủ**: ${details.ingredients}` : ''}
+${details.indications ? `- **Chỉ định đầy đủ**: ${details.indications}` : ''}
+${details.dosage ? `- **Liều dùng chi tiết**: ${details.dosage}` : ''}
+${details.administration ? `- **Cách dùng**: ${details.administration}` : ''}
+${details.contraindications ? `- **Chống chỉ định**: ${details.contraindications}` : ''}
+${details.warnings ? `- **Cảnh báo**: ${details.warnings}` : ''}
+${details.side_effects ? `- **Tác dụng phụ**: ${details.side_effects}` : ''}
+${details.drug_interactions ? `- **Tương tác thuốc**: ${details.drug_interactions}` : ''}
+${details.pregnancy ? `- **Sử dụng khi mang thai**: ${details.pregnancy}` : ''}
+${details.storage ? `- **Bảo quản**: ${details.storage}` : ''}
+${details.specification ? `- **Quy cách**: ${details.specification}` : ''}
+${details.registration_number ? `- **Số đăng ký**: ${details.registration_number}` : ''}`;
+      }
+      
+      // Thông tin từ FDA nếu có
+      if (fullDrugInfo.indications_and_usage || fullDrugInfo.dosage_and_administration || fullDrugInfo.warnings) {
+        detailedDrugInfo += `
+## Thông tin FDA
+${fullDrugInfo.indications_and_usage ? `- **Chỉ định và sử dụng**: ${fullDrugInfo.indications_and_usage}` : ''}
+${fullDrugInfo.dosage_and_administration ? `- **Liều lượng và cách dùng**: ${fullDrugInfo.dosage_and_administration}` : ''}
+${fullDrugInfo.warnings ? `- **Cảnh báo**: ${fullDrugInfo.warnings}` : ''}
+${fullDrugInfo.adverse_reactions ? `- **Phản ứng phụ**: ${fullDrugInfo.adverse_reactions}` : ''}
+${fullDrugInfo.drug_interactions ? `- **Tương tác thuốc**: ${fullDrugInfo.drug_interactions}` : ''}
+${fullDrugInfo.contraindications ? `- **Chống chỉ định**: ${fullDrugInfo.contraindications}` : ''}
+${fullDrugInfo.clinical_pharmacology ? `- **Dược lý lâm sàng**: ${fullDrugInfo.clinical_pharmacology}` : ''}`;
+      }
+    }
+
+    // Xử lý lịch sử tin nhắn trước đó nếu có
+    let chatHistory = '';
+    if (messages && messages.length > 0) {
+      chatHistory = '\n## Lịch sử trò chuyện trước đó\n';
+      
+      // Chỉ lấy tối đa 5 tin nhắn gần nhất để tránh prompt quá dài
+      const recentMessages = messages.slice(-5);
+      
+      recentMessages.forEach(message => {
+        const role = message.role === 'user' ? 'Người dùng' : 'Trợ lý';
+        chatHistory += `**${role}**: ${message.content}\n\n`;
+      });
+    }
 
     // Cải thiện prompt để có câu trả lời chất lượng cao hơn
     let prompt = `# Hướng dẫn Hệ thống
@@ -36,7 +87,11 @@ Sau đây là thông tin thuốc bạn cần tham khảo:
 - Nhà sản xuất/Thương hiệu: ${productInfo.brand}
 - Nhóm thuốc: ${productInfo.category}
 
-## Câu hỏi của người dùng:
+${detailedDrugInfo}
+
+${chatHistory}
+
+## Câu hỏi hiện tại của người dùng:
 ${question}
 
 ## Hướng dẫn trả lời
@@ -51,7 +106,7 @@ ${question}
 - Sử dụng tiêu đề và phân cấp nội dung rõ ràng
 - Sử dụng **in đậm** cho điểm quan trọng
 - Sử dụng *in nghiêng* cho thuật ngữ chuyên môn
-- Sử dụng \`code\` cho tên biệt dược, hoạt chất
+- Khi nhắc đến tên thuốc, viết trực tiếp tên thuốc không cần bọc trong bất kỳ ký tự đặc biệt nào. Ví dụ: "Bệnh nhân nên uống Panadol mỗi 4-6 giờ".
 - Sử dụng danh sách có số thứ tự cho các bước, quy trình
 - Sử dụng danh sách không số thứ tự (-) cho liệt kê thông tin
 - Sử dụng bảng cho dữ liệu có cấu trúc hoặc so sánh
@@ -65,6 +120,10 @@ ${question}
       const chunkText = chunk.text();
       text += chunkText;
     }
+    
+    // Xử lý đầu ra để loại bỏ dấu backtick (`)
+    text = text.replace(/`([^`]+)`/g, '$1');
+    
     return text;
 
   } catch (error) {
@@ -98,6 +157,10 @@ Provide a concise, accurate, and easy-to-understand answer. If the information i
           const chunkText = chunk.text();
           text += chunkText;
         }
+        
+        // Xử lý đầu ra để loại bỏ dấu backtick (`)
+        text = text.replace(/`([^`]+)`/g, '$1');
+        
         return text;
 };
 

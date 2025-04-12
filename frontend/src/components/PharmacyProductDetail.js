@@ -56,6 +56,25 @@ import {
 } from '@mui/icons-material';
 import axiosInstance from '../axios-config'; // Assuming this is correctly configured
 
+// Hàm loại bỏ tất cả thẻ HTML từ chuỗi
+const stripHtml = (html) => {
+  if (!html) return '';
+  
+  // Loại bỏ tất cả các thẻ HTML
+  let text = html.replace(/<[^>]*>/g, '');
+  
+  // Xử lý các thực thể HTML phổ biến
+  text = text.replace(/&nbsp;/g, ' ')
+             .replace(/&amp;/g, '&')
+             .replace(/&lt;/g, '<')
+             .replace(/&gt;/g, '>')
+             .replace(/&quot;/g, '"')
+             .replace(/&#39;/g, "'");
+  
+  // Loại bỏ nhiều khoảng trắng liên tiếp và trim
+  return text.replace(/\s+/g, ' ').trim();
+};
+
 // --- Styled Components ---
 
 // Styled container for dangerouslySetInnerHTML content
@@ -311,6 +330,55 @@ const PharmacyProductDetail = () => {
     }
   };
 
+  const formatDrugInfoForChat = (product) => {
+    // Tạo đối tượng với các trường cơ bản và giữ nguyên cấu trúc cũ để tương thích
+    const formattedInfo = {
+      name: product.name,
+      brand_name: product.brand || product.details?.brand,
+      generic_name: product.generic_name || product.details?.generic_name || product.name,
+      active_ingredient: product.details?.ingredients || product.active_ingredient || '',
+      indications_and_usage: product.details?.indications || product.details?.usage || product.description,
+      warnings: product.details?.warnings || product.details?.side_effects || '',
+      dosage_and_administration: product.details?.dosage || product.details?.administration || '',
+      adverse_reactions: product.details?.side_effects || product.details?.adverse_reactions || '',
+
+      // Thông tin bổ sung để map vào cấu trúc productInfo của askGeminiWithFDA 
+      description: product.moTaHtml ? stripHtml(product.moTaHtml) : (product.description || ''),
+      ingredients: product.thanhPhanHtml ? stripHtml(product.thanhPhanHtml) : (product.details?.ingredients || product.active_ingredient || ''),
+      usage: product.chiDinhHtml ? stripHtml(product.chiDinhHtml) : (product.details?.indications || product.details?.usage || product.description || ''),
+      dosage: product.huongDanHtml ? stripHtml(product.huongDanHtml) : (product.details?.dosage || product.details?.administration || ''),
+      adverseEffect: product.thanTrongHtml ? stripHtml(product.thanTrongHtml) : (product.details?.side_effects || product.details?.adverse_reactions || ''),
+      careful: product.thanTrongHtml ? stripHtml(product.thanTrongHtml) : (product.details?.warnings || product.details?.contraindications || ''),
+      preservation: product.thongTinSanXuatHtml ? stripHtml(product.thongTinSanXuatHtml) : (product.details?.storage || product.details?.preservation || 'Bảo quản nơi khô ráo, tránh ánh nắng trực tiếp'),
+      brand: product.brand || product.details?.brand || product.manufacturer?.name || '',
+      category: product.details?.category || '',
+      price: product.price?.formattedValue || '',
+      
+      // Dữ liệu bổ sung
+      manufacturer: product.details?.manufacturer || product.manufacturer?.name,
+      categories: [product.details?.category].filter(Boolean),
+      imageUrl: product.images?.[0],
+
+      // Thêm toàn bộ dữ liệu gốc của sản phẩm, nhưng loại bỏ HTML từ các trường HTML
+      ...product,
+      moTaHtml: product.moTaHtml ? stripHtml(product.moTaHtml) : product.moTaHtml,
+      thanhPhanHtml: product.thanhPhanHtml ? stripHtml(product.thanhPhanHtml) : product.thanhPhanHtml,
+      chiDinhHtml: product.chiDinhHtml ? stripHtml(product.chiDinhHtml) : product.chiDinhHtml,
+      huongDanHtml: product.huongDanHtml ? stripHtml(product.huongDanHtml) : product.huongDanHtml,
+      thanTrongHtml: product.thanTrongHtml ? stripHtml(product.thanTrongHtml) : product.thanTrongHtml,
+      thongTinSanXuatHtml: product.thongTinSanXuatHtml ? stripHtml(product.thongTinSanXuatHtml) : product.thongTinSanXuatHtml,
+      cauHoiThuongGapHtml: product.cauHoiThuongGapHtml ? stripHtml(product.cauHoiThuongGapHtml) : product.cauHoiThuongGapHtml,
+      
+      // Đảm bảo details được sao chép đúng cách (tránh tham chiếu)
+      details: { ...(product.details || {}) },
+      
+      // Thêm cờ xác định dữ liệu đã được định dạng đầy đủ
+      isFullyFormatted: true
+    };
+    
+    return formattedInfo;
+  };
+
   // Render consolidated product info that combines name, brand, and details
   const renderConsolidatedProductInfo = (product) => {
     return (
@@ -451,7 +519,10 @@ const PharmacyProductDetail = () => {
             variant="contained" 
             color="primary" 
             startIcon={<ChatIcon />}
-            onClick={() => navigate('/chat-with-ai', { state: { drugInfo: product } })}
+            onClick={() => {
+              const formattedDrugInfo = formatDrugInfoForChat(product);
+              navigate('/chat', { state: { drugInfo: formattedDrugInfo } });
+            }}
             sx={{ 
               mb: 2,
               borderRadius: 2,
@@ -494,13 +565,25 @@ const PharmacyProductDetail = () => {
           color="primary"
           size="large"
           startIcon={<ChatIcon />}
-          onClick={() => navigate('/chat', { state: { drugInfo: product } })}
+          onClick={() => {
+            const formattedDrugInfo = formatDrugInfoForChat(product);
+            navigate('/chat', { state: { drugInfo: formattedDrugInfo } });
+          }}
           fullWidth
         >
           Chat với AI
         </Button>
       </Box>
     );
+  };
+
+  // Hàm để khởi tạo chat với AI
+  const handleChatWithAI = () => {
+    console.log('Bắt đầu chat với AI về sản phẩm:', product?.name || 'Không có tên');
+    
+    // Sử dụng formatDrugInfoForChat để đảm bảo nhất quán với nút chat khác
+    const formattedDrugInfo = formatDrugInfoForChat(product);
+    navigate('/chat', { state: { drugInfo: formattedDrugInfo } });
   };
 
   return (

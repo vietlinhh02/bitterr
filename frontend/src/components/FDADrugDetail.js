@@ -96,16 +96,35 @@ function FDADrugDetail() {
 
   const handleChatWithAI = () => {
     console.log('Navigating to chat with drug data:', drugData);
-    // Đảm bảo drugData có đầy đủ thông tin cần thiết
+    
+    // Tạo một đối tượng thông tin thuốc đầy đủ với các trường chính và toàn bộ dữ liệu gốc
     const drugInfo = {
-      brand_name: drugData.brand_name || '',
-      generic_name: drugData.generic_name || '',
-      active_ingredient: drugData.active_ingredient || '',
+      // Các trường cơ bản được xây dựng từ dữ liệu FDA
+      brand_name: drugData.brand_name || drugData.openfda?.brand_name?.[0] || '',
+      generic_name: drugData.generic_name || drugData.openfda?.generic_name?.[0] || '',
+      active_ingredient: drugData.active_ingredient || drugData.openfda?.active_ingredient?.[0] || '',
       indications_and_usage: drugData.indications_and_usage || '',
-      warnings: drugData.warnings || '',
+      warnings: drugData.warnings || drugData.warnings_and_cautions || '',
       dosage_and_administration: drugData.dosage_and_administration || '',
-      adverse_reactions: drugData.adverse_reactions || ''
+      adverse_reactions: drugData.adverse_reactions || '',
+      
+      // Thêm các trường bổ sung cho API Gemini
+      description: drugData.description || drugData.indications_and_usage || '',
+      ingredients: drugData.active_ingredient || drugData.openfda?.active_ingredient?.[0] || '',
+      usage: drugData.indications_and_usage || '',
+      dosage: drugData.dosage_and_administration || '',
+      adverseEffect: drugData.adverse_reactions || '',
+      careful: drugData.warnings || drugData.warnings_and_cautions || '',
+      preservation: drugData.storage_and_handling || 'Bảo quản theo hướng dẫn của nhà sản xuất',
+      
+      // Thêm toàn bộ dữ liệu gốc để AI có thể truy cập
+      ...drugData,
+      
+      // Đánh dấu đây là dữ liệu từ FDA
+      source: 'fda',
+      isFullyFormatted: true
     };
+    
     navigate('/chat', { state: { drugInfo } });
   };
 

@@ -132,16 +132,35 @@ function FDADrugSearch() {
   // Thêm hàm để chuyển đến trang chat với AI
   const handleChatWithAI = (drug) => {
     console.log('Navigating to chat with drug from search:', drug);
-    // Đảm bảo drug có đầy đủ thông tin cần thiết
+    
+    // Tạo đối tượng thông tin thuốc đầy đủ
     const drugInfo = {
-      brand_name: drug.brand_name || '',
-      generic_name: drug.generic_name || '',
-      active_ingredient: drug.active_ingredient || '',
+      // Các trường cơ bản được xây dựng từ dữ liệu FDA
+      brand_name: drug.brand_name || drug.openfda?.brand_name?.[0] || '',
+      generic_name: drug.generic_name || drug.openfda?.generic_name?.[0] || '',
+      active_ingredient: drug.active_ingredient || drug.openfda?.active_ingredient?.[0] || '',
       indications_and_usage: drug.indications_and_usage || '',
-      warnings: drug.warnings || '',
+      warnings: drug.warnings || drug.warnings_and_cautions || '',
       dosage_and_administration: drug.dosage_and_administration || '',
-      adverse_reactions: drug.adverse_reactions || ''
+      adverse_reactions: drug.adverse_reactions || '',
+      
+      // Thêm các trường bổ sung cho API Gemini
+      description: drug.description || drug.indications_and_usage || '',
+      ingredients: drug.active_ingredient || drug.openfda?.active_ingredient?.[0] || '',
+      usage: drug.indications_and_usage || '',
+      dosage: drug.dosage_and_administration || '',
+      adverseEffect: drug.adverse_reactions || '',
+      careful: drug.warnings || drug.warnings_and_cautions || '',
+      preservation: drug.storage_and_handling || 'Bảo quản theo hướng dẫn của nhà sản xuất',
+      
+      // Thêm toàn bộ dữ liệu gốc để AI có thể truy cập
+      ...drug,
+      
+      // Đánh dấu đây là dữ liệu từ FDA
+      source: 'fda',
+      isFullyFormatted: true
     };
+    
     navigate('/chat', { state: { drugInfo } });
   };
 
