@@ -44,6 +44,7 @@ const MedicineDetection = () => {
   const [loadingPharmacy, setLoadingPharmacy] = useState(false);
   const [activeTab, setActiveTab] = useState(0); // 0: Nhãn thuốc, 1: Viên thuốc
   const [processedImage, setProcessedImage] = useState(null);
+  const [imageError, setImageError] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -79,6 +80,7 @@ const MedicineDetection = () => {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
       setError(null);
+      setImageError(false);
     }
   };
 
@@ -116,7 +118,20 @@ const MedicineDetection = () => {
         
         // Nếu đang ở tab viên thuốc và có ảnh đã xử lý
         if (activeTab === 1 && response.data.data.image_base64) {
-          setProcessedImage(response.data.data.image_base64);
+          // Kiểm tra tính hợp lệ của dữ liệu base64 trước khi gán
+          const imageData = response.data.data.image_base64;
+          if (typeof imageData === 'string' && (
+            imageData.startsWith('data:image/') || 
+            imageData.startsWith('http://') || 
+            imageData.startsWith('https://')
+          )) {
+            setProcessedImage(imageData);
+          } else if (typeof imageData === 'string') {
+            // Nếu thiếu tiền tố data:image, thêm vào
+            setProcessedImage(`data:image/jpeg;base64,${imageData}`);
+          } else {
+            console.error('Định dạng ảnh không hợp lệ:', imageData);
+          }
         }
         
         setSuccess('Nhận diện thuốc thành công');
@@ -263,6 +278,14 @@ const MedicineDetection = () => {
     setOpenSnackbar(false);
   };
 
+  const handleImageError = () => {
+    console.error('Lỗi khi tải hình ảnh');
+    setImageError(true);
+    // Hiển thị thông báo lỗi
+    setError('Không thể hiển thị hình ảnh đã xử lý. Xin vui lòng thử lại.');
+    setOpenSnackbar(true);
+  };
+
   const renderDetectionTab = () => (
     <Grid container spacing={4}>
       {/* Phần upload và preview ảnh */}
@@ -317,13 +340,17 @@ const MedicineDetection = () => {
               }}
             >
               <img
-                src={activeTab === 1 && processedImage ? `data:image/jpeg;base64,${processedImage}` : previewUrl}
+                src={activeTab === 1 && processedImage && !imageError ? 
+                  (processedImage.startsWith('data:image/') ? processedImage : `data:image/jpeg;base64,${processedImage}`) 
+                  : previewUrl}
                 alt="Preview"
+                onError={handleImageError}
                 style={{
                   maxWidth: '100%',
-                  maxHeight: 400,
+                  maxHeight: '300px',
                   objectFit: 'contain',
-                  borderRadius: 8,
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                 }}
               />
               <IconButton

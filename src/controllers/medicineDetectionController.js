@@ -130,7 +130,9 @@ async function detectPills(req, res) {
     const pythonServerUrl = process.env.PYTHON_API_URL || 'http://localhost:8000';
     const pythonApiUrl = `${pythonServerUrl}/detect/`;
     
-    console.log('Gửi yêu cầu đến Python API:', pythonApiUrl);
+    // Thêm log để kiểm tra URL
+    console.log('Python Server URL:', pythonServerUrl);
+    console.log('Python API URL:', pythonApiUrl);
     
     try {
       const pythonResponse = await axios.post(pythonApiUrl, formData, {
@@ -163,6 +165,7 @@ async function detectPills(req, res) {
           
           // Chuyển đổi thành base64
           const imageBase64 = Buffer.from(imageResponse.data).toString('base64');
+          // Đảm bảo chuỗi base64 đã có tiền tố đúng định dạng
           detectionResults.image_base64 = `data:image/jpeg;base64,${imageBase64}`;
           
           // Xóa đường dẫn gốc vì không cần thiết cho client
