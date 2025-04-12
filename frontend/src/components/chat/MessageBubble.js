@@ -1,11 +1,12 @@
 import React from 'react';
 import { Box, Paper, Typography, Avatar, useTheme } from '@mui/material';
-import { Person as PersonIcon, SmartToy as SmartToyIcon } from '@mui/icons-material';
+import { Person as PersonIcon } from '@mui/icons-material';
 import { Fade } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Link as MuiLink } from '@mui/material';
 import { Divider } from '@mui/material';
+import RobotIcon from '../common/RobotIcon';
 
 const MessageBubble = ({ isUser, message, timestamp }) => {
   const theme = useTheme();
@@ -46,17 +47,29 @@ const MessageBubble = ({ isUser, message, timestamp }) => {
           alignItems: 'flex-start',
           maxWidth: '85%',
         }}>
-          <Avatar
-            sx={{
-              bgcolor: isUser ? theme.palette.primary.main : theme.palette.secondary.main,
-              width: 36,
-              height: 36,
+          {isUser ? (
+            <Avatar
+              sx={{
+                bgcolor: theme.palette.primary.main,
+                width: 36,
+                height: 36,
+                mt: 0.5,
+                mx: 1,
+              }}
+            >
+              <PersonIcon fontSize="small" />
+            </Avatar>
+          ) : (
+            <Box sx={{
               mt: 0.5,
               mx: 1,
-            }}
-          >
-            {isUser ? <PersonIcon fontSize="small" /> : <SmartToyIcon fontSize="small" />}
-          </Avatar>
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <RobotIcon height={36} />
+            </Box>
+          )}
           <Box>
             <Paper
               elevation={2}
@@ -94,7 +107,9 @@ const MessageBubble = ({ isUser, message, timestamp }) => {
                         backgroundColor: theme.palette.info.light + '33',
                         p: 1.5, my: 1.5, borderRadius: 1, color: 'text.primary',
                         fontStyle: 'italic', '& p': { mb: 0 }
-                      }} {...props} />
+                      }}>
+                        {props.children}
+                      </Box>
                     ),
                     code: ({ inline, className, children, ...props }) => {
                       const match = /language-(\w+)/.exec(className || '')

@@ -14,17 +14,22 @@ import {
   Tooltip,
   Chip,
   Badge,
-  Button
+  Button,
+  ListItemAvatar,
+  Avatar
 } from '@mui/material';
 import { 
-  MedicalServices as MedicalServicesIcon, 
   Delete as DeleteIcon,
   Search as SearchIcon,
   Add as AddIcon,
   QuestionAnswer as QuestionAnswerIcon,
   CalendarToday as CalendarTodayIcon,
+  Person as PersonIcon,
+  MoreVert as MoreVertIcon,
+  ContentCopy as ContentCopyIcon
 } from '@mui/icons-material';
 import { getChatHistory, deleteChatHistoryItem } from '../../services/api';
+import RobotIcon from '../common/RobotIcon';
 
 const ChatHistory = ({ onSelectChat, onNewChat, formatTimestamp }) => {
   const [chatHistory, setChatHistory] = useState([]);
@@ -190,7 +195,7 @@ const ChatHistory = ({ onSelectChat, onNewChat, formatTimestamp }) => {
                   <Box sx={{ width: '100%' }}>
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 0.5 }}>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', maxWidth: 'calc(100% - 30px)' }}>
-                        <MedicalServicesIcon color="primary" fontSize="small" sx={{ mr: 1, mt: 0.5 }} />
+                        <RobotIcon height={24} sx={{ mr: 1 }} />
                         <Typography 
                           variant="body1" 
                           fontWeight="medium" 

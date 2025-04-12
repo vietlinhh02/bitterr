@@ -23,7 +23,6 @@ import {
   Person as PersonIcon,
   History as HistoryIcon,
   Chat as ChatIcon,
-  MedicalServices as MedicalServicesIcon,
   PhotoCamera as PhotoCameraIcon,
   LocalPharmacy as LocalPharmacyIcon,
   Home as HomeIcon,
@@ -35,6 +34,7 @@ import {
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import PillIcon from './common/PillIcon';
 
 function Navigation() {
   const theme = useTheme();
@@ -145,7 +145,7 @@ function Navigation() {
               alignItems: 'center'
             }}
           >
-            <MedicalServicesIcon sx={{ mr: 1 }} />
+            <PillIcon sx={{ mr: 1, fontSize: 32 }} />
             BiiterNCKH
           </Typography>
 
@@ -162,7 +162,7 @@ function Navigation() {
               textDecoration: 'none',
             }}
           >
-            <MedicalServicesIcon sx={{ mr: 1 }} />
+            <PillIcon sx={{ mr: 1, fontSize: 28 }} />
             BiiterNCKH
           </Typography>
           

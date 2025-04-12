@@ -13,14 +13,18 @@ import {
 } from '@mui/material';
 import {
   Send as SendIcon, Delete as DeleteIcon, SmartToy as SmartToyIcon, Person as PersonIcon,
-  MedicalServices as MedicalServicesIcon, ArrowBack as ArrowBackIcon, QuestionAnswer as QuestionAnswerIcon,
+  ArrowBack as ArrowBackIcon, QuestionAnswer as QuestionAnswerIcon,
   History as HistoryIcon, Add as AddIcon, Menu as MenuIcon, Search as SearchIcon,
   Error as ErrorIcon, Close as CloseIcon, Lightbulb as LightbulbIcon,
   Settings as SettingsIcon, 
   HelpOutline as HelpOutlineIcon, 
   Chat as ChatIcon,
   ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon
+  ChevronRight as ChevronRightIcon,
+  Warning as WarningIcon,
+  MoreVert as MoreVertIcon,
+  ContentCopy as ContentCopyIcon,
+  PhotoCamera as PhotoCameraIcon
 } from '@mui/icons-material';
 import { askGeminiAboutDrug, getChatHistory, deleteChatHistoryItem } from '../services/api';
 import ReactMarkdown from 'react-markdown';
