@@ -107,7 +107,7 @@ export const searchPharmacityDrugs = async (keyword) => {
         saveCache(cacheKey, response.data.data);
       }
       
-      return response.data.data;
+      return response.data;
     } catch (error) {
       console.error('Lỗi khi tìm kiếm thuốc Pharmacity:', error);
       

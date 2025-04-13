@@ -32,7 +32,7 @@ const swaggerOptions = {
       bearerAuth: []
     }]
   },
-  apis: ['./src/routers/*.js', './src/models/*.js'] // Path to the API docs
+  apis: ['./src/routes/*.js', './src/ml_models/*.js'] // Path to the API docs
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
