@@ -54,7 +54,7 @@ function FAQ() {
     {
       id: 1,
       question: 'BiiterNCKH là gì?',
-      answer: 'BiiterNCKH là ứng dụng tra cứu thông tin thuốc thông minh, giúp người dùng tiếp cận thông tin chính xác từ nguồn dữ liệu đáng tin cậy. Ứng dụng cung cấp nhiều tính năng như tìm kiếm thuốc FDA, nhận diện thuốc từ ảnh, tìm kiếm sản phẩm Long Châu và chat với AI.',
+      answer: 'BiiterNCKH là ứng dụng tra cứu thông tin thuốc thông minh, giúp người dùng tiếp cận thông tin chính xác từ nguồn dữ liệu đáng tin cậy. Ứng dụng cung cấp nhiều tính năng như tìm kiếm thuốc FDA, nhận diện thuốc từ ảnh và chat với AI.',
       category: 'all'
     },
     {
@@ -114,7 +114,7 @@ function FAQ() {
     {
       id: 11,
       question: 'Dữ liệu thuốc được cập nhật thường xuyên không?',
-      answer: 'Có, dữ liệu thuốc của chúng tôi được cập nhật hàng ngày từ các nguồn chính thức như FDA, Dược thư Quốc gia Việt Nam và Long Châu để đảm bảo thông tin luôn mới nhất và chính xác.',
+      answer: 'Có, dữ liệu thuốc của chúng tôi được cập nhật hàng ngày từ các nguồn chính thức như FDA và Dược thư Quốc gia Việt Nam để đảm bảo thông tin luôn mới nhất và chính xác.',
       category: 'features'
     },
     {
@@ -126,7 +126,7 @@ function FAQ() {
     {
       id: 13,
       question: 'Tôi có thể sử dụng BiiterNCKH ở nước ngoài không?',
-      answer: 'Có, BiiterNCKH có thể được sử dụng ở bất kỳ đâu trên thế giới. Tuy nhiên, một số tính năng như tìm kiếm sản phẩm Long Châu chủ yếu tập trung vào thị trường Việt Nam. Tính năng tìm kiếm thuốc FDA và chat với AI hoạt động toàn cầu.',
+      answer: 'Có, BiiterNCKH có thể được sử dụng ở bất kỳ đâu trên thế giới. Tất cả các tính năng như tìm kiếm thuốc FDA và chat với AI hoạt động toàn cầu.',
       category: 'features'
     },
     {

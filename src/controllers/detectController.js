@@ -4,14 +4,13 @@ const path = require('path');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const FormData = require('form-data');
 require('dotenv').config();
-const drugController = require('./drugController');
+//const drugController = require('./drugController');
 const geminiService = require('../services/geminiService');
-const ocrSpaceService = require('../services/ocrSpaceService');
+//const ocrSpaceService = require('../services/ocrSpaceService');
 const multer = require('multer');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const PYTHON_SERVER_URL = 'http://localhost:5001';
 
 // Cấu hình multer để lưu file tạm
 const upload = multer({
@@ -25,38 +24,6 @@ const upload = multer({
     cb(null, true);
   }
 }).single('image');
-
-async function searchLongChauProducts(keyword) {
-    try {
-        const response = await axios.get(
-            `https://api.nhathuoclongchau.com.vn/lccus/search-product-service/api/products/ecom/product/suggest?keyword=${encodeURIComponent(keyword)}`,
-            {
-                headers: {
-                    'Accept': 'application/json',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                }
-            }
-        );
-
-        // Kiểm tra và chuyển đổi dữ liệu từ API mới
-        if (response.data && response.data.result) {
-            return {
-                data: response.data.result.map(item => ({
-                    name: item.name,
-                    price: item.price,
-                    manufacturer: item.manufacturer,
-                    url: `https://nhathuoclongchau.com.vn/san-pham/${item.slug}`,
-                    image: item.images && item.images[0],
-                    description: item.shortDescription
-                }))
-            };
-        }
-        return null;
-    } catch (error) {
-        console.error('Lỗi khi tìm kiếm trên Long Châu:', error);
-        return null;
-    }
-}
 
 /**
  * Xử lý tải lên ảnh và phát hiện tên thuốc

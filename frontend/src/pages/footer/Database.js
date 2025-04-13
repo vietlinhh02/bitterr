@@ -58,15 +58,6 @@ function Database() {
       category: 'Việt Nam'
     },
     {
-      id: 3,
-      name: 'Long Châu Drug Database',
-      description: 'Dữ liệu thuốc và sản phẩm y tế từ hệ thống nhà thuốc Long Châu',
-      records: '30,000+',
-      lastUpdated: '12/03/2025',
-      format: 'JSON, CSV',
-      category: 'Việt Nam'
-    },
-    {
       id: 4,
       name: 'WHO Essential Medicines',
       description: 'Danh sách thuốc thiết yếu của Tổ chức Y tế Thế giới (WHO)',

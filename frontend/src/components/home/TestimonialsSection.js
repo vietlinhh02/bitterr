@@ -31,7 +31,7 @@ function TestimonialsSection() {
     {
       name: 'Lê Văn C',
       role: 'Người dùng',
-      content: 'Ứng dụng rất dễ sử dụng và giúp tôi hiểu rõ hơn về thuốc tôi đang dùng. Tôi đặc biệt thích tính năng tìm kiếm sản phẩm từ Long Châu.',
+      content: 'Ứng dụng rất dễ sử dụng và giúp tôi hiểu rõ hơn về thuốc tôi đang dùng. Tôi đặc biệt thích tính năng nhận diện thuốc từ ảnh.',
       avatar: 'https://randomuser.me/api/portraits/men/3.jpg',
       rating: 4
     }

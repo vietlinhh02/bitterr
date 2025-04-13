@@ -25,7 +25,7 @@ const favoriteDrugSchema = new mongoose.Schema(
     },
     source: {
       type: String,
-      enum: ['fda', 'longchau'],
+      enum: ['fda'],
       default: 'fda'
     }
   },

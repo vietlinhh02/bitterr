@@ -8,7 +8,7 @@ const askGeminiWithFDA = async (data) => {
   try {
     // Sử dụng model mạnh hơn để có câu trả lời tốt hơn
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-pro",  // Thay đổi từ gemini-2.0-flash sang gemini-1.5-pro để có câu trả lời dài, chi tiết hơn
+      model: "gemini-2.0-flash",  // Thay đổi từ gemini-2.0-flash sang gemini-1.5-pro để có câu trả lời dài, chi tiết hơn
       generationConfig: {
         temperature: 0.7,      // Tăng nhiệt độ để có câu trả lời đa dạng hơn
         topP: 0.95,            // Tăng topP để mở rộng không gian câu trả lời
@@ -140,7 +140,7 @@ ${question}
 
 
 const askGeminiWithOCRText = async (ocrText, question) => {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" }); // Hoặc gemini-pro
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); // Hoặc gemini-pro
 
     // Tạo prompt (dựa trên OCR text)
     const prompt = `You are a pharmacist.  A user has provided the following text extracted from an image of a drug label:

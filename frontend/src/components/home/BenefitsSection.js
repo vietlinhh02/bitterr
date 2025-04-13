@@ -26,7 +26,7 @@ function BenefitsSection() {
     {
       icon: <SecurityIcon fontSize="large" sx={{ color: '#2196f3' }} />,
       title: 'Thông tin đáng tin cậy',
-      description: 'Dữ liệu được lấy trực tiếp từ cơ sở dữ liệu FDA và Long Châu.',
+      description: 'Dữ liệu được lấy trực tiếp từ cơ sở dữ liệu FDA đáng tin cậy.',
       animation: 'zoom-in-up',
       delay: 300
     },

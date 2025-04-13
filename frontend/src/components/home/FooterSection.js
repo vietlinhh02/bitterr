@@ -24,7 +24,6 @@ function FooterSection() {
       links: [
         { name: 'Tra cứu thuốc FDA', href: '/fda-drugs' },
         { name: 'Nhận diện từ ảnh', href: '/image-detection' },
-        { name: 'Tìm kiếm Long Châu', href: '/longchau-search' },
         { name: 'Chat với AI', href: '/chat' }
       ]
     },

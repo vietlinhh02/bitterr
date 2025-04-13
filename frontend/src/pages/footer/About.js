@@ -116,8 +116,8 @@ function About() {
     },
     {
       year: '2023',
-      title: 'Hợp tác với Long Châu',
-      description: 'Ký kết hợp tác với chuỗi nhà thuốc Long Châu, tích hợp dữ liệu sản phẩm và thông tin thuốc từ Long Châu vào hệ thống.'
+      title: 'Mở rộng dữ liệu thuốc',
+      description: 'Mở rộng cơ sở dữ liệu thuốc và tích hợp với nhiều nhà thuốc, chuỗi dược phẩm trong nước.'
     },
     {
       year: '2024',
@@ -135,31 +135,26 @@ function About() {
   const partners = [
     {
       id: 1,
-      name: 'Nhà thuốc Long Châu',
-      logo: 'https://via.placeholder.com/150x80?text=Long+Chau'
-    },
-    {
-      id: 2,
       name: 'Bộ Y tế Việt Nam',
       logo: 'https://via.placeholder.com/150x80?text=Bo+Y+Te'
     },
     {
-      id: 3,
+      id: 2,
       name: 'Đại học Y Dược TP.HCM',
       logo: 'https://via.placeholder.com/150x80?text=UMP'
     },
     {
-      id: 4,
+      id: 3,
       name: 'Viện Nghiên cứu Dược phẩm',
       logo: 'https://via.placeholder.com/150x80?text=NCDP'
     },
     {
-      id: 5,
+      id: 4,
       name: 'Hiệp hội Dược phẩm Việt Nam',
       logo: 'https://via.placeholder.com/150x80?text=VPA'
     },
     {
-      id: 6,
+      id: 5,
       name: 'Tổ chức Y tế Thế giới (WHO)',
       logo: 'https://via.placeholder.com/150x80?text=WHO'
     }

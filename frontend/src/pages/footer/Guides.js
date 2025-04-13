@@ -77,12 +77,6 @@ function Guides() {
           image: 'https://images.unsplash.com/photo-1563213126-a4273aed2016?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
         },
         {
-          id: 'longchau-search',
-          title: 'Tìm kiếm sản phẩm Long Châu',
-          description: 'Hướng dẫn tìm kiếm sản phẩm từ nhà thuốc Long Châu',
-          image: 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
-        },
-        {
           id: 'advanced-search',
           title: 'Tìm kiếm nâng cao',
           description: 'Sử dụng các bộ lọc và tùy chọn tìm kiếm nâng cao',
@@ -389,7 +383,7 @@ function Guides() {
                     </AccordionSummary>
                     <AccordionDetails>
                       <Typography variant="body2">
-                        Có, dữ liệu thuốc của chúng tôi được cập nhật hàng ngày từ các nguồn chính thức như FDA, Dược thư Quốc gia Việt Nam và Long Châu để đảm bảo thông tin luôn mới nhất.
+                        Có, dữ liệu thuốc của chúng tôi được cập nhật hàng ngày từ các nguồn chính thức như FDA và Dược thư Quốc gia Việt Nam để đảm bảo thông tin luôn mới nhất.
                       </Typography>
                     </AccordionDetails>
                   </Accordion>

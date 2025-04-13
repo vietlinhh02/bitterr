@@ -49,13 +49,6 @@ const API = axios.create({
   }
 });
 
-// Cấu hình API Pharmacity
-const PHARMACITY_API = axios.create({
-  baseURL: 'https://www.pharmacity.vn',
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
 
 // Thêm interceptor để đính kèm token vào mỗi request
 API.interceptors.request.use((req) => {
@@ -102,13 +95,19 @@ export const searchPharmacityDrugs = async (keyword) => {
   return throttleRequest(cacheKey, async () => {
     try {
       // Gọi API backend để proxy request đến Pharmacity
-      const response = await API.get(`/drug/pharmacity/search?query=${encodeURIComponent(keyword)}`);
+      const response = await API.get('/pharmacy/search', {
+        params: {
+          keyword : keyword.trim(),
+          page: 1,
+          limit: 12
+        }
+      });
       
-      if (response.data) {
-        saveCache(cacheKey, response.data);
+      if (response.data.success) {
+        saveCache(cacheKey, response.data.data);
       }
       
-      return response;
+      return response.data.data;
     } catch (error) {
       console.error('Lỗi khi tìm kiếm thuốc Pharmacity:', error);
       
@@ -137,12 +136,6 @@ export const getDrugSearchHistory = () => API.get('/drug/search-history');
 
 // API lưu lịch sử tìm kiếm thuốc
 export const saveDrugSearchHistory = (searchData) => API.post('/drug/save-search-history', searchData);
-
-// API lưu lịch sử tìm kiếm Long Châu
-export const saveLongChauSearchHistory = (searchData) => API.post('/drug/save-search-history', {
-  ...searchData,
-  source: 'longchau'
-});
 
 // API lưu lịch sử tìm kiếm Pharmacity
 export const savePharmacitySearchHistory = (searchData) => API.post('/drug/save-search-history', {

@@ -154,19 +154,22 @@ const DrugSearchDialog = ({ open, onClose, onSelectDrug }) => {
   const handleSelectPharmacityDrug = (drug) => {
     onSelectDrug({
       source: 'pharmacity',
-      brand_name: drug.name || 'N/A',
-      generic_name: drug.ingredients || drug.name || 'N/A',
-      active_ingredient: drug.ingredients || 'N/A',
-      indications_and_usage: drug.description || 'N/A',
-      warnings: drug.contraindications || 'N/A',
-      dosage_and_administration: drug.dosage || 'N/A',
-      adverse_reactions: drug.sideEffects || 'N/A',
-      id: drug.id || drug.sku,
-      name: drug.name || 'Không có tên',
-      ingredient: drug.ingredients || 'Không có thông tin thành phần',
-      manufacturer: drug.manufacturer || 'Pharmacity',
-      price: drug.price || drug.finalPrice,
-      image: drug.images && drug.images.length > 0 ? drug.images[0] : null
+      id: drug.id || drug.sku || '',
+      name: drug.name || '',
+      slug: drug.slug || '',
+      brand: drug.brand || '',
+      manufacturer: drug.manufacturer || '',
+      price: drug.price || drug.finalPrice || '',
+      short_description: drug.short_description || '',
+      description: drug.description || '',
+      ingredients: drug.ingredients || '',
+      dosage: drug.dosage || '',
+      contraindications: drug.contraindications || '',
+      sideEffects: drug.sideEffects || '',
+      is_prescription_drug: drug.is_prescription_drug || false,
+      is_drug: drug.is_drug || false,
+      thumbnail: drug.thumbnail || (drug.images && drug.images.length > 0 ? { image_url: drug.images[0] } : null),
+      // Thêm các trường khác từ PharmacySearch.js nếu cần
     });
     onClose();
   };
