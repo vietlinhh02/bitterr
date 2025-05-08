@@ -36,7 +36,7 @@ BiiterNCKH là ứng dụng tra cứu thông tin thuốc thông minh, giúp ngư
 ### Hướng Dẫn Cài Đặt
 1. **Sao chép kho lưu trữ**
 ```bash
-git clone https://github.com/yourusername/bitterr.git
+git clone https://github.com/vietlinhh02/bitterr.git
 cd bitterr
 ```
 
@@ -97,9 +97,9 @@ Tài liệu API đầy đủ có sẵn sau khi khởi chạy ứng dụng tại 
 Chúng tôi hoan nghênh mọi đóng góp. Vui lòng làm theo các bước sau:
 
 1. Fork dự án
-2. Tạo nhánh tính năng (`git checkout -b feature/amazing-feature`)
-3. Commit các thay đổi (`git commit -m 'Add some amazing feature'`)
-4. Push lên nhánh (`git push origin feature/amazing-feature`)
+2. Tạo nhánh tính năng
+3. Commit các thay đổi 
+4. Push lên nhánh 
 5. Mở Pull Request
 
 ## 📜 Giấy Phép
@@ -108,9 +108,7 @@ Dự án này được cấp phép theo giấy phép MIT - xem file [LICENSE](LI
 
 ## 📞 Liên Hệ
 
-- Email: support@bitterr.com
-- Website: [https://bitterr.com](https://bitterr.com)
-- Hotline: 1900-xxxx
+- Email: nvlinh0607@gmail.com
 
 ## Cập nhật: Sử dụng OCR.space API 
 
