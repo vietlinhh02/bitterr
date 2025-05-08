@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const drugController = require('../controllers/drugController');
-const authMiddleware = require('../middleware/auth');
+const { authMiddleware } = require('../middleware/auth');
 
 /**
  * @swagger

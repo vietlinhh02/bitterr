@@ -1,6 +1,8 @@
 const express = require("express");
-const { registerUser, loginUser } = require("../controllers/authController");
+const { registerUser, loginUser, refreshToken, logout } = require("../controllers/authController");
+const { authMiddleware } = require('../middleware/auth');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 
 /**
  * @swagger
@@ -70,7 +72,7 @@ const router = express.Router();
  *                   type: string
  *                 email:
  *                   type: string
- *                 token:
+ *                 accessToken:
  *                   type: string
  *       400:
  *         description: Invalid user data or user already exists
@@ -115,7 +117,7 @@ router.route("/register").post(registerUser);
  *                   type: string
  *                 email:
  *                   type: string
- *                 token:
+ *                 accessToken:
  *                   type: string
  *       400:
  *         description: Missing email or password
@@ -125,5 +127,73 @@ router.route("/register").post(registerUser);
  *         description: Server error
  */
 router.route("/login").post(loginUser);
+
+// Route kiểm tra debug
+router.route("/test").get((req, res) => {
+  try {
+    const testUser = {
+      _id: "test123",
+      email: "test@example.com"
+    };
+    
+    const token = jwt.sign(
+      { id: testUser._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    
+    res.json({
+      success: true,
+      message: "Route test hoạt động",
+      testToken: token,
+      jwtSecret: process.env.JWT_SECRET ? "JWT_SECRET đã được cấu hình" : "JWT_SECRET không được cấu hình",
+      env: process.env.NODE_ENV || "development"
+    });
+  } catch (error) {
+    console.error("Lỗi route test:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi route test",
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/auth/refresh-token:
+ *   post:
+ *     summary: Refresh access token
+ *     description: Get a new access token using refresh token
+ *     responses:
+ *       200:
+ *         description: Successfully refreshed token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *       401:
+ *         description: Invalid or expired refresh token
+ *       500:
+ *         description: Server error
+ */
+router.route("/refresh-token").post(refreshToken);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     description: Invalidate the refresh token and log out the user
+ *     responses:
+ *       200:
+ *         description: Successfully logged out
+ *       500:
+ *         description: Server error
+ */
+router.route("/logout").post(logout);
 
 module.exports = router;

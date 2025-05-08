@@ -18,12 +18,18 @@
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.3",
     "cheerio": "^1.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "csurf": "^1.10.0",
     "dotenv": "^16.4.7",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^7.5.0",
     "form-data": "^4.0.2",
     "fs-extra": "^11.3.0",
+    "helmet": "^8.1.0",
+    "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.10.0",
     "morgan": "^1.10.0",
@@ -33,6 +39,7 @@
     "puppeteer": "^24.4.0",
     "sharp": "^0.33.5",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "xss-clean": "^0.1.4"
   }
 }

@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const authMiddleware = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const {authMiddleware} = require('../middleware/auth');
+const { upload, handleUploadError } = require('../middleware/upload');
 
 /**
  * @swagger
@@ -165,6 +165,6 @@ router.put('/change-password', authMiddleware, userController.changePassword);
  *       500:
  *         description: Server error
  */
-router.post('/avatar', authMiddleware, upload.single('avatar'), userController.uploadAvatar);
+router.post('/avatar', authMiddleware, upload.single('avatar'), handleUploadError, userController.uploadAvatar);
 
 module.exports = router;

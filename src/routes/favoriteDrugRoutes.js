@@ -5,11 +5,11 @@ const {
   getFavoriteDrugs,
   removeFavoriteDrug
 } = require('../controllers/favoriteDrugController');
-const { protect } = require('../middleware/authMiddleware');
+const { authMiddleware } = require('../middleware/auth');
 
 // Đường dẫn bảo vệ bằng middleware xác thực
-router.post('/', protect, addFavoriteDrug);
-router.get('/', protect, getFavoriteDrugs);
-router.delete('/:favoriteId', protect, removeFavoriteDrug);
+router.post('/', authMiddleware, addFavoriteDrug);
+router.get('/', authMiddleware, getFavoriteDrugs);
+router.delete('/:favoriteId', authMiddleware, removeFavoriteDrug);
 
 module.exports = router;

@@ -5,19 +5,31 @@ const securityMiddleware = require('./middleware/security');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
 const path = require('path');
+const cors = require('cors');
+const { csrfProtection, setupCsrf, handleCsrfError, cookieParser } = require('./middleware/csrf');
 
-// Import routes
-const authRoutes = require('./routes/authRoutes');
-const fdaDrugRoutes = require('./routes/fdaDrugRoutes');
-const userRoutes = require('./routes/userRoutes');
-const searchHistoryRoutes = require('./routes/searchHistoryRoutes');
-const chatRoutes = require('./routes/chatRoutes');
+// Import routes - sửa lại theo tên file thực tế
+const authRoutes = require('./routes/auth');
+const drugRoutes = require('./routes/drug');
+const userRoutes = require('./routes/user');
+const chatHistoryRoutes = require('./routes/chatHistory');
 const medicineDetectionRoutes = require('./routes/medicineDetectionRoutes');
-const drugEventsRoutes = require('./routes/drugEventsRoutes');
-const favoriteRoutes = require('./routes/favoriteRoutes');
 const pharmacyRoutes = require('./routes/pharmacyRoutes');
+const geminiRoutes = require('./routes/gemini');
+const detectRoutes = require('./routes/detect');
+const questionSuggestionRoutes = require('./routes/questionSuggestion');
+const translateRoutes = require('./routes/translate');
+const favoriteDrugRoutes = require('./routes/favoriteDrugRoutes');
 
 const app = express();
+
+// Cấu hình CORS
+app.use(cors({
+  origin: ['http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+  credentials: true
+}));
 
 // Áp dụng các middleware bảo mật
 securityMiddleware(app);
@@ -25,6 +37,9 @@ securityMiddleware(app);
 // Body parser
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Cookie parser - cần thiết cho CSRF
+app.use(cookieParser());
 
 // Phục vụ các tệp tĩnh
 // Cấu hình nghiêm ngặt hơn, chỉ cho phép truy cập vào thư mục uploads
@@ -46,16 +61,26 @@ if (process.env.NODE_ENV === 'development') {
 // API documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Routes
+// Áp dụng bảo vệ CSRF cho các routes cần bảo vệ (không bao gồm các API endpoints stateless)
+// Tạm thời bỏ CSRF protection để test
+// app.use('/api/auth/*', csrfProtection, setupCsrf);
+app.use('/api/users/*', csrfProtection, setupCsrf);
+
+// Xử lý lỗi CSRF
+app.use(handleCsrfError);
+
+// Routes - sửa lại để phù hợp với tên biến mới
 app.use('/api/auth', authRoutes);
-app.use('/api/fda-drugs', fdaDrugRoutes);
+app.use('/api/drug', drugRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/search-history', searchHistoryRoutes);
-app.use('/api/chat', chatRoutes);
+app.use('/api/chat-history', chatHistoryRoutes);
 app.use('/api/medicine-detection', medicineDetectionRoutes);
-app.use('/api/drug-events', drugEventsRoutes);
-app.use('/api/favorites', favoriteRoutes);
 app.use('/api/pharmacy', pharmacyRoutes);
+app.use('/api/gemini', geminiRoutes);
+app.use('/api/detect', detectRoutes);
+app.use('/api/question-suggestions', questionSuggestionRoutes);
+app.use('/api/translate', translateRoutes);
+app.use('/api/favorite-drugs', favoriteDrugRoutes);
 
 // Homepage
 app.get('/', (req, res) => {

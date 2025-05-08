@@ -46,7 +46,8 @@ const API = axios.create({
   baseURL: 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  withCredentials: true
 });
 
 
@@ -147,7 +148,22 @@ export const savePharmacitySearchHistory = (searchData) => API.post('/drug/save-
 export const deleteDrugSearchHistoryItem = (searchId) => API.delete(`/drug/search-history/${searchId}`);
 
 // API đăng nhập
-export const login = (formData) => API.post('/auth/login', formData);
+export const login = (formData) => {
+  console.log('Gửi yêu cầu đăng nhập với:', formData);
+  return API.post('/auth/login', formData)
+    .then(response => {
+      console.log('Phản hồi đăng nhập:', response.data);
+      return response;
+    })
+    .catch(error => {
+      console.error('Chi tiết lỗi đăng nhập:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers
+      });
+      throw error;
+    });
+};
 
 // API đăng ký
 export const register = (formData) => API.post('/auth/register', formData);

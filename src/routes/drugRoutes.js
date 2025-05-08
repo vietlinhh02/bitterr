@@ -1,4 +1,3 @@
-
 // Import router and controller
 const express = require('express');
 const router = express.Router();
@@ -9,15 +8,13 @@ const {
   deleteDrugSearchHistoryItem,
   searchDrugEvents 
 } = require('../controllers/drugController');
-const { protect } = require('../middleware/authMiddleware');
+const { authMiddleware } = require('../middleware/auth');
 
 // Set up routes
-router.get('/search', protect, searchDrug);
-router.get('/search-history', protect, getDrugSearchHistory);
-router.post('/save-search-history', protect, saveDrugSearchHistory);
-router.delete('/search-history/:searchId', protect, deleteDrugSearchHistoryItem); // Add this route
-router.get('/drug-events', protect, searchDrugEvents);
-
-// ...existing code...
+router.get('/search', authMiddleware, searchDrug);
+router.get('/search-history', authMiddleware, getDrugSearchHistory);
+router.post('/save-search-history', authMiddleware, saveDrugSearchHistory);
+router.delete('/search-history/:searchId', authMiddleware, deleteDrugSearchHistoryItem);
+router.get('/drug-events', authMiddleware, searchDrugEvents);
 
 module.exports = router;

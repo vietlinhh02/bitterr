@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const detectController = require('../controllers/detectController');
 const upload = require('../utils/fileUpload'); // Multer config
-const authMiddleware = require('../middleware/auth'); // Middleware xác thực (dummy)
+const {authMiddleware} = require('../middleware/auth'); // Middleware xác thực (dummy)
 
 /**
  * @swagger
@@ -49,6 +49,6 @@ const authMiddleware = require('../middleware/auth'); // Middleware xác thực 
  *       500:
  *         description: Server error
  */
-router.post('/image', upload.single('image'), detectController.detectDrugNames);
+router.post('/image', upload.single('image'), authMiddleware,detectController.detectDrugNames);
 
 module.exports = router;
