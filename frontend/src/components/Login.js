@@ -82,6 +82,9 @@ function Login() {
       const response = await login(formData);
       
       if (response.data.success) {
+        // Xóa apiKey cũ khỏi localStorage khi đăng nhập tài khoản mới
+        localStorage.removeItem('geminiApiKey');
+        
         localStorage.setItem('token', response.data.accessToken);
         updateUser(response.data.user);
         navigate('/');

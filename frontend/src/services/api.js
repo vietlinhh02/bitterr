@@ -255,8 +255,8 @@ export const askGeminiAboutDrug = async (data) => {
   try {
     console.log('Sending request to Gemini API:', data);
     
-    // Lấy API key của người dùng từ localStorage hoặc từ global user state
-    let userApiKey = localStorage.getItem('geminiApiKey');
+    // Chỉ lấy API key từ thông tin người dùng trong localStorage
+    let userApiKey = null;
     
     try {
       const userFromLocalStorage = JSON.parse(localStorage.getItem('user') || '{}');
@@ -270,7 +270,7 @@ export const askGeminiAboutDrug = async (data) => {
     
     const requestData = {
       ...data,
-      userApiKey: userApiKey || null // Gửi null nếu không có API key của người dùng
+      userApiKey: userApiKey // Gửi API key của người dùng đã đăng nhập
     };
     
     // Gửi dữ liệu trực tiếp không cần xử lý trung gian
@@ -334,8 +334,8 @@ export const getStaticQuestionSuggestions = (params) => {
 };
 
 export const getDynamicQuestionSuggestions = (drugInfo) => {
-  // Lấy API key của người dùng từ localStorage hoặc từ global user state
-  let userApiKey = localStorage.getItem('geminiApiKey');
+  // Chỉ lấy API key từ thông tin người dùng trong localStorage
+  let userApiKey = null;
   
   try {
     const userFromLocalStorage = JSON.parse(localStorage.getItem('user') || '{}');
@@ -349,7 +349,7 @@ export const getDynamicQuestionSuggestions = (drugInfo) => {
   
   return API.post('/question-suggestions/dynamic', { 
     drugInfo,
-    userApiKey: userApiKey || null // Gửi null nếu không có API key của người dùng
+    userApiKey: userApiKey // Gửi API key của người dùng đã đăng nhập
   });
 };
 

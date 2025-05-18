@@ -39,7 +39,7 @@ if "%option%"=="1" (
     
     :: Khoi dong Backend trong cua so moi
     echo Dang khoi dong Backend...
-    start "Bitterr Backend" cmd /k "color 0A && echo BACKEND SERVER && echo. && npm run dev"
+    
     
     :: Khoi dong Frontend trong cua so moi neu co
     if exist frontend (

@@ -12,14 +12,8 @@ export const UserProvider = ({ children }) => {
       if (storedUser) {
         const userData = JSON.parse(storedUser);
         
-        // Nếu có API key trong localStorage nhưng không có trong user data, thêm vào
-        const geminiApiKey = localStorage.getItem('geminiApiKey');
-        if (geminiApiKey && userData && !userData.geminiApiKey) {
-          userData.geminiApiKey = geminiApiKey;
-          // Lưu lại để đồng bộ
-          localStorage.setItem('user', JSON.stringify(userData));
-        }
-        
+        // Xóa bỏ phần code kết hợp API key từ localStorage
+        // Không sử dụng API key từ localStorage để tránh lộn API key giữa các tài khoản
         setUser(userData);
       }
     } catch (error) {
@@ -59,13 +53,8 @@ export const UserProvider = ({ children }) => {
       setUser(null);
       localStorage.removeItem('user');
       localStorage.removeItem('token');
+      localStorage.removeItem('geminiApiKey'); // Luôn xóa API key khi đăng xuất
       sessionStorage.removeItem('userProfileCache');
-      
-      // Giữ lại geminiApiKey nếu cần
-      const geminiApiKey = localStorage.getItem('geminiApiKey');
-      if (!geminiApiKey) {
-        localStorage.removeItem('geminiApiKey');
-      }
       
       console.log('Đã xóa thông tin người dùng cũ');
     } catch (error) {
