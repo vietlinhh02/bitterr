@@ -4,10 +4,16 @@ const bcrypt = require('bcryptjs');
 const RefreshToken = require('../models/RefreshToken');
 const crypto = require('crypto');
 
+// Đường dẫn tới avatar mặc định
+const DEFAULT_AVATAR = '/uploads/avatars/default-avatar.svg';
+
 // Tạo access token (ngắn hạn - 24 giờ)
-const generateAccessToken = (userId) => {
+const generateAccessToken = (userId, userRole = 'user') => {
     return jwt.sign(
-        { id: userId },
+        { 
+            id: userId,
+            role: userRole 
+        },
         process.env.JWT_SECRET,
         { expiresIn: '24h' }
     );
@@ -58,7 +64,7 @@ const registerUser = async (req, res) => {
         });
 
         // Tạo access token
-        const accessToken = generateAccessToken(user._id);
+        const accessToken = generateAccessToken(user._id, user.role);
         
         // Tạo refresh token
         const refreshToken = await generateRefreshToken(user._id);
@@ -77,7 +83,9 @@ const registerUser = async (req, res) => {
             user: {
                 _id: user._id,
                 username: user.username,
-                email: user.email
+                email: user.email,
+                avatar: DEFAULT_AVATAR,
+                role: user.role
             }
         });
     } catch (error) {
@@ -112,7 +120,7 @@ const loginUser = async (req, res) => {
         }
 
         // Tạo access token
-        const accessToken = generateAccessToken(user._id);
+        const accessToken = generateAccessToken(user._id, user.role);
         
         // Tạo refresh token
         const refreshToken = await generateRefreshToken(user._id);
@@ -125,6 +133,9 @@ const loginUser = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 ngày
         });
 
+        // Đảm bảo avatar không bị null
+        const userAvatar = user.avatar || DEFAULT_AVATAR;
+
         res.json({
             success: true,
             accessToken,
@@ -132,7 +143,8 @@ const loginUser = async (req, res) => {
                 _id: user._id,
                 username: user.username,
                 email: user.email,
-                avatar: user.avatar
+                avatar: userAvatar,
+                role: user.role
             }
         });
     } catch (error) {
@@ -179,8 +191,8 @@ const refreshToken = async (req, res) => {
             });
         }
 
-        // Tạo access token mới
-        const accessToken = generateAccessToken(user._id);
+        // Tạo access token mới với role
+        const accessToken = generateAccessToken(user._id, user.role);
 
         res.json({
             success: true,

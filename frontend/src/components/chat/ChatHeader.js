@@ -1,10 +1,11 @@
 import React from 'react';
-import { Box, Typography, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Badge } from '@mui/material';
+import { Box, Typography, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Badge, Tooltip } from '@mui/material';
 import { 
   ArrowBack as ArrowBackIcon, 
   Menu as MenuIcon, 
   History as HistoryIcon, 
-  Search as SearchIcon 
+  Search as SearchIcon,
+  Api as ApiIcon
 } from '@mui/icons-material';
 
 const ChatHeader = ({ 
@@ -14,7 +15,8 @@ const ChatHeader = ({
   setAnchorEl, 
   handleSelectDrug, 
   openHistoryDialog,
-  isMobile
+  isMobile,
+  usingCustomApiKey
 }) => {
   return (
     <Box 
@@ -53,6 +55,11 @@ const ChatHeader = ({
         <Box>
           <Typography variant="h7" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
             Chat với AI
+            {usingCustomApiKey && (
+              <Tooltip title="Đang sử dụng API key của bạn">
+                <ApiIcon sx={{ ml: 1, fontSize: 16, color: 'success.light' }} />
+              </Tooltip>
+            )}
           </Typography>
           {drugInfo && (
             <Typography variant="body2" sx={{ mt: -0.5, opacity: 0.85 }}>

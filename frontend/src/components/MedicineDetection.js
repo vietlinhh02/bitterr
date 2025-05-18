@@ -18,6 +18,8 @@ import {
   Tooltip,
   Tabs,
   Tab,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
@@ -49,16 +51,18 @@ const MedicineDetection = () => {
   const navigate = useNavigate();
 
   const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-    // Reset states when changing tab
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    setDetectionResults(null);
-    setProcessedImage(null);
-    setSearchQuery('');
-    setPharmacyResults(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (newValue !== null) {
+      setActiveTab(newValue);
+      // Reset states when changing tab
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setDetectionResults(null);
+      setProcessedImage(null);
+      setSearchQuery('');
+      setPharmacyResults(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -292,13 +296,30 @@ const MedicineDetection = () => {
       <Grid item xs={12} md={6}>
         <Paper
           sx={{
-            p: 3,
+            p: 4,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             minHeight: 400,
+            borderRadius: '16px',
+            boxShadow: 3,
+            border: '1px solid #e0e0e0',
           }}
         >
+          <Typography variant="h5" gutterBottom sx={{ 
+            fontWeight: 'bold', 
+            color: '#009688',
+            mb: 3,
+            alignSelf: 'flex-start',
+            borderBottom: '2px solid #009688',
+            paddingBottom: 1,
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            <CloudUploadIcon sx={{ mr: 1 }} />
+            Tải lên hình ảnh
+          </Typography>
+          
           <input
             type="file"
             accept="image/*"
@@ -321,13 +342,18 @@ const MedicineDetection = () => {
                 cursor: 'pointer',
                 '&:hover': {
                   borderColor: 'primary.main',
+                  backgroundColor: '#f0f7ff',
                 },
+                transition: 'all 0.3s ease'
               }}
               onClick={() => fileInputRef.current.click()}
             >
-              <CloudUploadIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="body1" color="text.secondary">
+              <CloudUploadIcon sx={{ fontSize: 80, color: '#009688', mb: 2 }} />
+              <Typography variant="h6" sx={{ color: '#546e7a', textAlign: 'center' }}>
                 Nhấp để tải lên hình ảnh thuốc
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#78909c', mt: 1, textAlign: 'center' }}>
+                Hỗ trợ định dạng: JPG, PNG, GIF (tối đa 10MB)
               </Typography>
             </Box>
           ) : (
@@ -350,7 +376,7 @@ const MedicineDetection = () => {
                   maxHeight: '300px',
                   objectFit: 'contain',
                   borderRadius: '8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                 }}
               />
               <IconButton
@@ -371,31 +397,31 @@ const MedicineDetection = () => {
             </Box>
           )}
 
-          <Box sx={{ width: '100%', mt: 3 }}>
+          <Box sx={{ width: '100%', mt: 4 }}>
             <Grid container spacing={2}>
-              <Grid item xs={12}>
-                {activeTab === 0 && (
-                  <TextField
-                    fullWidth
-                    label="Tìm kiếm"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Ví dụ: Tìm thuốc chứa paracetamol"
-                    variant="outlined"
-                    disabled={!selectedFile || loading}
-                  />
-                )}
-              </Grid>
               <Grid item xs={activeTab === 0 ? 6 : 12}>
                 <Button
                   fullWidth
                   variant="contained"
-                  color="primary"
+                  sx={{ 
+                    py: 1.5, 
+                    borderRadius: 2,
+                    fontSize: '1.1rem',
+                    textTransform: 'none',
+                    boxShadow: 3,
+                    bgcolor: '#009688',
+                    '&:hover': {
+                      bgcolor: '#00796b',
+                    },
+                    '&.Mui-disabled': {
+                      bgcolor: '#e0f2f1',
+                    }
+                  }}
                   startIcon={<LocalPharmacyIcon />}
                   onClick={handleDetect}
                   disabled={!selectedFile || loading}
                 >
-                  {loading ? <CircularProgress size={24} /> : 'Nhận diện'}
+                  {loading ? <CircularProgress size={24} /> : 'Nhận diện thuốc'}
                 </Button>
               </Grid>
               {activeTab === 0 && (
@@ -403,7 +429,17 @@ const MedicineDetection = () => {
                   <Button
                     fullWidth
                     variant="contained"
-                    color="secondary"
+                    sx={{ 
+                      py: 1.5, 
+                      borderRadius: 2,
+                      fontSize: '1.1rem',
+                      textTransform: 'none',
+                      boxShadow: 3,
+                      bgcolor: '#00897b',
+                      '&:hover': {
+                        bgcolor: '#00695c',
+                      }
+                    }}
                     startIcon={<SearchIcon />}
                     onClick={handleSearch}
                     disabled={!selectedFile || !searchQuery.trim() || loading}
@@ -419,8 +455,25 @@ const MedicineDetection = () => {
 
       {/* Phần kết quả nhận diện */}
       <Grid item xs={12} md={6}>
-        <Paper sx={{ p: 3, minHeight: 400 }}>
-          <Typography variant="h6" gutterBottom>
+        <Paper sx={{ 
+          p: 4, 
+          minHeight: 400, 
+          borderRadius: '16px',
+          boxShadow: 3,
+          border: '1px solid #e0e0e0',
+          overflowY: 'auto',
+          maxHeight: '70vh'
+        }}>
+          <Typography variant="h5" gutterBottom sx={{ 
+            fontWeight: 'bold', 
+            color: '#009688',
+            mb: 3,
+            borderBottom: '2px solid #009688',
+            paddingBottom: 1,
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            <SearchIcon sx={{ mr: 1 }} />
             Kết quả nhận diện
           </Typography>
 
@@ -464,7 +517,15 @@ const MedicineDetection = () => {
                     <Typography
                       variant="body1"
                       component="div"
-                      sx={{ whiteSpace: 'pre-wrap' }}
+                      sx={{ 
+                        whiteSpace: 'pre-wrap',
+                        fontSize: '1.1rem',
+                        lineHeight: 1.8,
+                        backgroundColor: '#e0f2f1',
+                        padding: 3,
+                        borderRadius: 2,
+                        border: '1px solid #b2dfdb'
+                      }}
                     >
                       {detectionResults.rawResult}
                     </Typography>
@@ -472,29 +533,103 @@ const MedicineDetection = () => {
                     <>
                       {Array.isArray(detectionResults) ? (
                         detectionResults.map((item, index) => (
-                          <Card key={index} sx={{ mb: 2 }}>
-                            <CardContent>
-                              <Typography variant="h6">{item.name}</Typography>
+                          <Card 
+                            key={index} 
+                            sx={{ 
+                              mb: 2, 
+                              borderRadius: "8px", 
+                              boxShadow: 'rgba(0, 0, 0, 0.08) 0px 3px 8px',
+                              overflow: 'hidden',
+                              transition: 'all 0.2s ease-in-out',
+                              '&:hover': {
+                                boxShadow: 'rgba(0, 0, 0, 0.12) 0px 5px 12px',
+                                transform: 'translateY(-2px)'
+                              }
+                            }}
+                          >
+                            <Box sx={{ 
+                              p: 1, 
+                              pl: 2, 
+                              backgroundColor: '#009688', 
+                              color: 'white',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              <LocalPharmacyIcon fontSize="small" sx={{ mr: 1 }} />
+                              <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
+                                {item.name}
+                              </Typography>
+                            </Box>
+                            <CardContent sx={{ p: 2 }}>
                               {item.dosage && (
-                                <Typography variant="body2" color="text.secondary">
-                                  Liều lượng: {item.dosage}
-                                </Typography>
+                                <Box sx={{ 
+                                  display: 'flex', 
+                                  alignItems: 'flex-start', 
+                                  mb: 1.5,
+                                  pb: 1.5,
+                                  borderBottom: '1px dashed #e0e0e0'
+                                }}>
+                                  <Typography variant="body2" sx={{ 
+                                    fontWeight: 'bold', 
+                                    color: '#546e7a',
+                                    minWidth: '90px'
+                                  }}>
+                                    Liều lượng:
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#212121' }}>
+                                    {item.dosage}
+                                  </Typography>
+                                </Box>
                               )}
                               {item.active_ingredients && (
-                                <Typography variant="body2">
-                                  Thành phần: {item.active_ingredients}
-                                </Typography>
+                                <Box sx={{ 
+                                  display: 'flex', 
+                                  alignItems: 'flex-start', 
+                                  mb: 1.5,
+                                  pb: 1.5,
+                                  borderBottom: '1px dashed #e0e0e0'
+                                }}>
+                                  <Typography variant="body2" sx={{ 
+                                    fontWeight: 'bold', 
+                                    color: '#546e7a',
+                                    minWidth: '90px'
+                                  }}>
+                                    Thành phần:
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#212121' }}>
+                                    {item.active_ingredients}
+                                  </Typography>
+                                </Box>
                               )}
                               {item.usage && (
-                                <Typography variant="body2">
-                                  Công dụng: {item.usage}
-                                </Typography>
+                                <Box sx={{ 
+                                  display: 'flex', 
+                                  alignItems: 'flex-start', 
+                                  mb: 1.5
+                                }}>
+                                  <Typography variant="body2" sx={{ 
+                                    fontWeight: 'bold', 
+                                    color: '#546e7a',
+                                    minWidth: '90px'
+                                  }}>
+                                    Công dụng:
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#212121' }}>
+                                    {item.usage}
+                                  </Typography>
+                                </Box>
                               )}
-                              <Box sx={{ mt: 1 }}>
+                              <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'flex-end' }}>
                                 <Button
                                   size="small"
                                   variant="outlined"
                                   onClick={() => handleSearchInPharmacy(item.name)}
+                                  startIcon={<SearchIcon fontSize="small" />}
+                                  sx={{ 
+                                    borderRadius: 4,
+                                    textTransform: 'none',
+                                    fontSize: '0.8rem'
+                                  }}
                                 >
                                   Tìm tại nhà thuốc
                                 </Button>
@@ -504,23 +639,82 @@ const MedicineDetection = () => {
                         ))
                       ) : (
                         // Hiển thị kết quả nếu là object
-                        <Card sx={{ mb: 2 }}>
-                          <CardContent>
+                        <Card sx={{ 
+                          mb: 2, 
+                          borderRadius: "8px", 
+                          boxShadow: 'rgba(0, 0, 0, 0.08) 0px 3px 8px',
+                          overflow: 'hidden',
+                          transition: 'all 0.2s ease-in-out',
+                          '&:hover': {
+                            boxShadow: 'rgba(0, 0, 0, 0.12) 0px 5px 12px',
+                            transform: 'translateY(-2px)'
+                          }
+                        }}>
+                          {detectionResults.name && (
+                            <Box sx={{ 
+                              p: 1, 
+                              pl: 2, 
+                              backgroundColor: '#009688', 
+                              color: 'white',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              <LocalPharmacyIcon fontSize="small" sx={{ mr: 1 }} />
+                              <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
+                                {detectionResults.name}
+                              </Typography>
+                            </Box>
+                          )}
+                          <CardContent sx={{ p: 2 }}>
                             {Object.entries(detectionResults).map(([key, value]) => {
-                              // Bỏ qua các thuộc tính không cần hiển thị
-                              if (key === 'box_2d' || key === 'image_base64') return null;
+                              // Bỏ qua các thuộc tính không cần hiển thị và tên (đã hiển thị ở header)
+                              if (key === 'box_2d' || key === 'image_base64' || key === 'name') return null;
+                              
+                              // Chuyển đổi key thành tiêu đề dạng người đọc
+                              const formattedKey = key
+                                .replace(/_/g, ' ')
+                                .split(' ')
+                                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                .join(' ');
+                                
                               return (
-                                <Typography key={key} variant="body1" gutterBottom>
-                                  <strong>{key.replace('_', ' ')}:</strong> {value}
-                                </Typography>
+                                <Box 
+                                  key={key} 
+                                  sx={{ 
+                                    display: 'flex', 
+                                    alignItems: 'flex-start', 
+                                    mb: 1.5,
+                                    pb: 1.5,
+                                    borderBottom: key !== Object.keys(detectionResults).filter(k => 
+                                      k !== 'box_2d' && k !== 'image_base64' && k !== 'name').pop() 
+                                      ? '1px dashed #e0e0e0' : 'none',
+                                  }}
+                                >
+                                  <Typography variant="body2" sx={{ 
+                                    fontWeight: 'bold', 
+                                    color: '#546e7a',
+                                    minWidth: '100px'
+                                  }}>
+                                    {formattedKey}:
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#212121' }}>
+                                    {value}
+                                  </Typography>
+                                </Box>
                               );
                             })}
-                            <Box sx={{ mt: 1 }}>
+                            <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'flex-end' }}>
                               <Button
                                 size="small"
                                 variant="outlined"
                                 onClick={() => handleSearchInPharmacy(detectionResults.name)}
                                 disabled={!detectionResults.name}
+                                startIcon={<SearchIcon fontSize="small" />}
+                                sx={{ 
+                                  borderRadius: 4,
+                                  textTransform: 'none',
+                                  fontSize: '0.8rem'
+                                }}
                               >
                                 Tìm tại nhà thuốc
                               </Button>
@@ -536,54 +730,187 @@ const MedicineDetection = () => {
                 <Box>
                   {detectionResults.detections && detectionResults.detections.length > 0 ? (
                     <Box>
-                      <Typography variant="subtitle1" gutterBottom>
+                      <Typography variant="subtitle1" gutterBottom sx={{ 
+                        color: '#009688', 
+                        fontWeight: 'medium',
+                        mb: 2,
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}>
+                        <InfoIcon fontSize="small" sx={{ mr: 1 }} />
                         Tìm thấy {detectionResults.detections.length} loại thuốc
                       </Typography>
-                      {detectionResults.detections.map((detection, index) => (
-                        <Card key={index} sx={{ mb: 2 }}>
-                          <CardContent>
-                            <Typography variant="h6">
-                              {detection.medication_name}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              ID thuốc: {detection.medication_id}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Độ tin cậy: {(detection.confidence * 100).toFixed(1)}%
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Độ tin cậy YOLO: {(detection.yolo_confidence * 100).toFixed(1)}%
-                            </Typography>
-                            <Box sx={{ mt: 1 }}>
-                              <Button
+                      
+                      {/* Hiển thị ảnh đã xử lý nếu có */}
+                      {processedImage && (
+                        <Box sx={{ 
+                          mb: 2, 
+                          display: 'flex', 
+                          justifyContent: 'center',
+                          border: '1px solid #b2dfdb',
+                          borderRadius: 1,
+                          padding: 1,
+                          backgroundColor: '#e0f2f1'
+                        }}>
+                          <img 
+                            src={processedImage} 
+                            alt="Ảnh đã xử lý" 
+                            style={{ 
+                              maxWidth: '100%', 
+                              maxHeight: '400px',
+                              borderRadius: '4px',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                            }} 
+                            onError={handleImageError}
+                          />
+                        </Box>
+                      )}
+                      
+                      <Box sx={{ mt: 2 }}>
+                        {detectionResults.detections.map((detection, index) => (
+                          <Card 
+                            key={index} 
+                            sx={{ 
+                              mb: 2, 
+                              borderRadius: "8px", 
+                              boxShadow: 'rgba(0, 0, 0, 0.08) 0px 3px 8px',
+                              overflow: 'hidden',
+                              transition: 'all 0.2s ease-in-out',
+                              '&:hover': {
+                                boxShadow: 'rgba(0, 0, 0, 0.12) 0px 5px 12px',
+                                transform: 'translateY(-2px)'
+                              }
+                            }}
+                          >
+                            <Box sx={{ 
+                              p: 1, 
+                              pl: 2, 
+                              backgroundColor: '#009688', 
+                              color: 'white',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between'
+                            }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <LocalPharmacyIcon fontSize="small" sx={{ mr: 1 }} />
+                                <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
+                                  {detection.medication_name}
+                                </Typography>
+                              </Box>
+                              <Chip 
+                                label={`ID: ${detection.medication_id}`} 
                                 size="small"
-                                variant="outlined"
-                                onClick={() => handleSearchInPharmacy(detection.medication_name)}
-                              >
-                                Tìm tại nhà thuốc
-                              </Button>
+                                sx={{ 
+                                  bgcolor: 'rgba(255,255,255,0.25)', 
+                                  color: 'white',
+                                  fontSize: '0.7rem',
+                                  height: 20
+                                }}
+                              />
                             </Box>
-                          </CardContent>
-                        </Card>
-                      ))}
+                            <CardContent sx={{ p: 2 }}>
+                              <Grid container spacing={2}>
+                                <Grid item xs={12} sm={6}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <Typography variant="body2" sx={{ 
+                                      fontWeight: 'bold', 
+                                      color: '#546e7a',
+                                      mr: 1
+                                    }}>
+                                      Độ tin cậy:
+                                    </Typography>
+                                    <Chip 
+                                      label={`${(detection.confidence * 100).toFixed(1)}%`} 
+                                      color={detection.confidence > 0.7 ? "success" : "warning"}
+                                      size="small"
+                                      sx={{ 
+                                        fontSize: '0.7rem',
+                                        height: 22
+                                      }}
+                                    />
+                                  </Box>
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <Typography variant="body2" sx={{ 
+                                      fontWeight: 'bold', 
+                                      color: '#546e7a',
+                                      mr: 1
+                                    }}>
+                                      Độ tin cậy YOLO:
+                                    </Typography>
+                                    <Chip 
+                                      label={`${(detection.yolo_confidence * 100).toFixed(1)}%`} 
+                                      color={detection.yolo_confidence > 0.7 ? "success" : "warning"}
+                                      size="small"
+                                      sx={{ 
+                                        fontSize: '0.7rem',
+                                        height: 22
+                                      }}
+                                    />
+                                  </Box>
+                                </Grid>
+                              </Grid>
+                              
+                              <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'flex-end' }}>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  onClick={() => handleSearchInPharmacy(detection.medication_name)}
+                                  startIcon={<SearchIcon fontSize="small" />}
+                                  sx={{ 
+                                    borderRadius: 4,
+                                    textTransform: 'none',
+                                    fontSize: '0.8rem'
+                                  }}
+                                >
+                                  Tìm tại nhà thuốc
+                                </Button>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </Box>
                     </Box>
                   ) : (
-                    <Typography variant="body1" color="text.secondary" align="center">
-                      Không tìm thấy thuốc nào trong hình ảnh
-                    </Typography>
+                    <Box
+                      sx={{
+                        p: 3,
+                        bgcolor: '#f5f5f5',
+                        borderRadius: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'column'
+                      }}
+                    >
+                      <InfoIcon sx={{ color: '#9e9e9e', mb: 1 }} />
+                      <Typography variant="body2" color="text.secondary" align="center">
+                        Không tìm thấy thuốc nào trong hình ảnh
+                      </Typography>
+                    </Box>
                   )}
                 </Box>
               )}
 
               {detectionResults && (
-                <Box sx={{ mt: 2 }}>
+                <Box sx={{ mt: 3 }}>
                   <Button
-                    variant="outlined"
-                    color="primary"
+                    variant="contained"
                     startIcon={<SaveIcon />}
                     onClick={handleSaveResult}
                     disabled={loading}
                     fullWidth
+                    sx={{ 
+                      py: 1.5, 
+                      borderRadius: 2, 
+                      fontSize: '1.1rem',
+                      textTransform: 'none',
+                      bgcolor: '#26a69a',
+                      '&:hover': {
+                        bgcolor: '#00897b',
+                      }
+                    }}
                   >
                     Lưu kết quả
                   </Button>
@@ -597,32 +924,48 @@ const MedicineDetection = () => {
       {/* Hiển thị kết quả từ nhà thuốc */}
       {pharmacyResults && pharmacyResults.length > 0 && (
         <Grid item xs={12}>
-          <Paper sx={{ p: 3, mt: 3, borderRadius: 2, boxShadow: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ 
+          <Paper sx={{ 
+            p: 4, 
+            mt: 4, 
+            borderRadius: '16px', 
+            boxShadow: 3,
+            border: '1px solid #e0e0e0'
+          }}>
+            <Typography variant="h5" gutterBottom sx={{ 
               display: 'flex', 
               alignItems: 'center',
-              color: '#1976d2',
+              color: '#009688',
               fontWeight: 'bold',
-              pb: 1,
-              borderBottom: '1px solid #e0e0e0'
+              pb: 2,
+              mb: 3,
+              borderBottom: '2px solid #009688'
             }}>
-              <LocalPharmacyIcon sx={{ mr: 1 }} />
+              <LocalPharmacyIcon sx={{ mr: 1, fontSize: 30 }} />
               Sản phẩm tại nhà thuốc
             </Typography>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
+            
+            <Grid container spacing={3} sx={{ mt: 1 }}>
               {pharmacyResults.map((item, index) => (
                 <Grid item xs={12} sm={6} md={3} key={index}>
                   <Card sx={{ 
                     height: '100%', 
                     display: 'flex', 
                     flexDirection: 'column',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
                     transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                    border: '1px solid #e0e0e0',
                     '&:hover': {
                       transform: 'translateY(-5px)',
                       boxShadow: 5,
                     }
                   }}>
-                    <Box sx={{ position: 'relative', pt: '100%', overflow: 'hidden' }}>
+                    <Box sx={{ 
+                      position: 'relative', 
+                      pt: '100%', 
+                      overflow: 'hidden',
+                      backgroundColor: '#f8f9fa'
+                    }}>
                       {item.thumbnail && item.thumbnail.image_url ? (
                         <CardMedia
                           component="img"
@@ -635,7 +978,11 @@ const MedicineDetection = () => {
                             width: '100%',
                             height: '100%',
                             objectFit: 'contain',
-                            p: 2
+                            p: 2,
+                            transition: 'transform 0.3s ease',
+                            '&:hover': {
+                              transform: 'scale(1.05)'
+                            }
                           }}
                         />
                       ) : (
@@ -650,11 +997,12 @@ const MedicineDetection = () => {
                           justifyContent: 'center',
                           bgcolor: '#f5f5f5'
                         }}>
-                          <LocalPharmacyIcon sx={{ fontSize: 60, color: '#bdbdbd' }} />
+                          <LocalPharmacyIcon sx={{ fontSize: 80, color: '#bdbdbd' }} />
                         </Box>
                       )}
                     </Box>
-                    <CardContent sx={{ flexGrow: 1, pt: 2 }}>
+                    
+                    <CardContent sx={{ flexGrow: 1, pt: 2, pb: 1 }}>
                       <Typography 
                         variant="h6" 
                         component="div" 
@@ -666,36 +1014,56 @@ const MedicineDetection = () => {
                           WebkitBoxOrient: 'vertical',
                           lineHeight: 1.3,
                           height: '2.6em',
-                          fontWeight: 'medium'
+                          fontWeight: 'medium',
+                          fontSize: '1.1rem',
+                          color: '#00796b'
                         }}
                         title={item.name}
                       >
                         {item.name}
                       </Typography>
+                      
                       {item.brand_name && (
                         <Typography 
-                          variant="body2" 
-                          color="text.secondary" 
-                          gutterBottom
-                          sx={{ mt: 1 }}
+                          variant="body1" 
+                          sx={{ 
+                            mt: 1,
+                            fontWeight: 'medium',
+                            color: '#546e7a'
+                          }}
                         >
-                          {item.brand_name}
+                          <strong>Thương hiệu:</strong> {item.brand_name}
+                        </Typography>
+                      )}
+                      
+                      {item.price && (
+                        <Typography 
+                          variant="h6" 
+                          sx={{ 
+                            mt: 2,
+                            color: '#d32f2f',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          {formatPrice(item.price)} ₫
                         </Typography>
                       )}
                     </CardContent>
+                    
                     <Box sx={{ p: 2, pt: 0 }}>
                       <Button
                         variant="contained"
-                        color="primary"
                         fullWidth
                         onClick={() => navigate(`/pharmacy-product/${item.slug}`)}
                         sx={{
-                          borderRadius: 2,
-                          py: 1,
+                          borderRadius: '8px',
+                          py: 1.5,
                           boxShadow: 2,
-                          bgcolor: '#2196f3',
+                          bgcolor: '#009688',
+                          fontSize: '1rem',
+                          textTransform: 'none',
                           '&:hover': {
-                            bgcolor: '#1976d2'
+                            bgcolor: '#00796b'
                           }
                         }}
                       >
@@ -713,79 +1081,102 @@ const MedicineDetection = () => {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h4" gutterBottom align="center" sx={{ 
-        mb: 4, 
-        color: '#1565c0',
-        fontWeight: 700,
-        position: 'relative',
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          bottom: -10,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 100,
-          height: 3,
-          backgroundColor: '#bbdefb',
-          borderRadius: 10,
-        }
-      }}>
-        Nhận Diện Thuốc
-      </Typography>
-
-      <Box sx={{ 
-        mb: 4, 
-        display: 'flex', 
-        justifyContent: 'center', 
-        gap: 3,
-        position: 'relative'
-      }}>
-        <Button
-          variant={activeTab === 0 ? "contained" : "outlined"}
-          color="primary"
-          startIcon={<LocalPharmacyIcon />}
-          onClick={() => handleTabChange(null, 0)}
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      {/* Header với tiêu đề lớn và nổi bật */}
+      <Box 
+        sx={{ 
+          textAlign: 'center', 
+          mb: 4,
+          pb: 3,
+          borderBottom: '1px solid #e0e0e0',
+        }}
+      >
+        <Typography 
+          variant="h3" 
+          component="h1" 
           sx={{ 
-            px: 4, 
-            py: 1.2, 
-            borderRadius: 5,
-            boxShadow: activeTab === 0 ? 3 : 0,
-            fontSize: '1rem',
-            fontWeight: 500,
-            transition: 'all 0.3s ease',
-            '&:hover': {
-              transform: 'translateY(-2px)',
-              boxShadow: activeTab === 0 ? 4 : 1,
-            }
+            fontWeight: 'bold', 
+            mb: 2,
+            color: '#00796b',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center' 
           }}
         >
-          Nhãn thuốc
-        </Button>
-        <Button
-          variant={activeTab === 1 ? "contained" : "outlined"} 
-          color="primary"
-          startIcon={<NewReleasesIcon />}
-          onClick={() => handleTabChange(null, 1)}
-          sx={{ 
-            px: 4, 
-            py: 1.2, 
-            borderRadius: 5,
-            boxShadow: activeTab === 1 ? 3 : 0,
-            fontSize: '1rem',
-            fontWeight: 500,
-            transition: 'all 0.3s ease',
-            '&:hover': {
-              transform: 'translateY(-2px)',
-              boxShadow: activeTab === 1 ? 4 : 1,
-            }
-          }}
-        >
-          Viên thuốc
-        </Button>
+          <LocalPharmacyIcon sx={{ fontSize: 40, mr: 2 }} />
+          Nhận diện thuốc
+        </Typography>
+        <Typography variant="h6" sx={{ color: '#00897b', fontWeight: 'normal' }}>
+          Tải lên hình ảnh và sử dụng công nghệ AI để nhận dạng thông tin về thuốc
+        </Typography>
       </Box>
 
-      {renderDetectionTab()}
+      {/* Switch chọn loại nhận diện thay cho Tabs */}
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          justifyContent: 'center',
+          mb: 6
+        }}
+      >
+        <ToggleButtonGroup
+          value={activeTab}
+          exclusive
+          onChange={handleTabChange}
+          aria-label="loại nhận diện"
+          size="small"
+          sx={{
+            '& .MuiToggleButtonGroup-grouped': {
+              border: '1px solid #009688',
+              '&.Mui-selected': {
+                backgroundColor: '#009688',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: '#00796b',
+                },
+              },
+              '&:not(:first-of-type)': {
+                borderLeft: '1px solidrgb(3, 35, 32)',
+              },
+              py: 1,
+              px: 2,
+              borderRadius: '20px !important',
+              mx: 0.5
+            },
+          }}
+        >
+          <ToggleButton 
+            value={0} 
+            aria-label="nhãn thuốc"
+            sx={{ 
+              textTransform: 'none',
+              borderRadius: '24px',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <LocalPharmacyIcon sx={{ mr: 1, fontSize: '1rem' }} />
+            Nhãn thuốc
+          </ToggleButton>
+          <ToggleButton 
+            value={1} 
+            aria-label="viên thuốc"
+            sx={{ 
+              textTransform: 'none',
+              borderRadius: '24px',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <NewReleasesIcon sx={{ mr: 1, fontSize: '1rem' }} />
+            Viên thuốc
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
+
+      <Grid container spacing={4}>
+        {renderDetectionTab()}
+      </Grid>
 
       <Snackbar
         open={openSnackbar}

@@ -2,13 +2,32 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 require('dotenv').config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Sử dụng API key được cung cấp
+const DEFAULT_GEMINI_API_KEY = process.env.GEMINI_API_KEYY;
+let genAI = new GoogleGenerativeAI(DEFAULT_GEMINI_API_KEY);
+
+// Log để xác nhận API key đã được cập nhật
+console.log("Gemini API initialized with default key");
+
+// Hàm để tạo instance mới của Gemini API với API key của người dùng
+const initializeWithUserApiKey = (userApiKey) => {
+  if (!userApiKey || userApiKey.trim() === '') {
+    console.log("Using default Gemini API key");
+    return new GoogleGenerativeAI(DEFAULT_GEMINI_API_KEY);
+  }
+  
+  console.log("Using user-provided Gemini API key");
+  return new GoogleGenerativeAI(userApiKey);
+};
 
 const askGeminiWithFDA = async (data) => {
   try {
+    // Kiểm tra xem có API key của người dùng không
+    const currentGenAI = data.userApiKey ? initializeWithUserApiKey(data.userApiKey) : genAI;
+    
     // Sử dụng model mạnh hơn để có câu trả lời tốt hơn
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash",  // Thay đổi từ gemini-2.0-flash sang gemini-1.5-pro để có câu trả lời dài, chi tiết hơn
+    const model = currentGenAI.getGenerativeModel({ 
+      model: "gemini-2.0-flash",  
       generationConfig: {
         temperature: 0.7,      // Tăng nhiệt độ để có câu trả lời đa dạng hơn
         topP: 0.95,            // Tăng topP để mở rộng không gian câu trả lời
@@ -139,8 +158,9 @@ ${question}
 };
 
 
-const askGeminiWithOCRText = async (ocrText, question) => {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); // Hoặc gemini-pro
+const askGeminiWithOCRText = async (ocrText, question, userApiKey) => {
+    const currentGenAI = userApiKey ? initializeWithUserApiKey(userApiKey) : genAI;
+    const model = currentGenAI.getGenerativeModel({ model: "gemini-2.0-flash" }); 
 
     // Tạo prompt (dựa trên OCR text)
     const prompt = `You are a pharmacist.  A user has provided the following text extracted from an image of a drug label:
@@ -167,14 +187,33 @@ Provide a concise, accurate, and easy-to-understand answer. If the information i
 
 // Add this new function to your existing geminiService.js file
 
-const generateQuestionSuggestions = async (drugInfo) => {
+const generateQuestionSuggestions = async (drugInfo, userApiKey) => {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    // Trích xuất các trường có giá trị từ drugInfo
+    const drugName = drugInfo.brand_name || drugInfo.generic_name || drugInfo.name || '';
+    const activeIngredient = drugInfo.active_ingredient || '';
+    const purpose = drugInfo.purpose || drugInfo.indications_and_usage || '';
+    
+    // Nếu không có đủ thông tin thuốc, trả về câu hỏi mặc định
+    if (!drugName && !activeIngredient && !purpose) {
+      console.log('Insufficient drug info, returning default questions');
+      return getDefaultQuestions();
+    }
+    
+    const currentGenAI = userApiKey ? initializeWithUserApiKey(userApiKey) : genAI;
+    const model = currentGenAI.getGenerativeModel({ 
+      model: "gemini-2.0-flash",
+      generationConfig: {
+        temperature: 0.4, // Thấp hơn để có câu trả lời ổn định hơn
+        maxOutputTokens: 1024
+      }
+    });
     
     // Create a prompt for Gemini to generate relevant questions
     let prompt = `You are a helpful AI assistant for a pharmaceutical application. 
     Based on the following drug information, generate 5 relevant and specific questions that a user might want to ask about this medication.
     The questions should be concise, practical, and cover different aspects like usage, side effects, precautions, etc.
+    The questions must be in Vietnamese language.
     
     Drug Information:
     - Brand Name: ${drugInfo.brand_name || 'N/A'}
@@ -184,11 +223,19 @@ const generateQuestionSuggestions = async (drugInfo) => {
     - Indications: ${drugInfo.indications_and_usage?.substring(0, 300) || 'N/A'}
     
     Format your response as a JSON array of strings, with each string being a question. Example:
-    ["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Question 5?"]
+    ["Tác dụng phụ thường gặp là gì?", "Liều dùng cho người lớn?", "Thuốc này tương tác với thức ăn nào?"]
     
     Only return the JSON array, nothing else.`;
     
-    const result = await model.generateContent(prompt);
+    // Thêm timeout để tránh request treo quá lâu
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Gemini API timeout')), 10000)
+    );
+    
+    const responsePromise = model.generateContent(prompt);
+    
+    // Sử dụng Promise.race để xử lý timeout
+    const result = await Promise.race([responsePromise, timeoutPromise]);
     const text = result.response.text();
     
     // Parse the JSON response
@@ -196,25 +243,35 @@ const generateQuestionSuggestions = async (drugInfo) => {
       // Extract JSON array from the response (in case Gemini adds extra text)
       const jsonMatch = text.match(/\[.*\]/s);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+        const questions = JSON.parse(jsonMatch[0]);
+        return questions.length > 0 ? questions : getDefaultQuestions();
       }
-      return JSON.parse(text);
+      
+      const questions = JSON.parse(text);
+      return questions.length > 0 ? questions : getDefaultQuestions();
     } catch (parseError) {
       console.error('Error parsing Gemini response as JSON:', parseError);
+      console.log('Original Gemini response:', text);
       // Fallback: return default questions if parsing fails
-      return [
-        "What are the common side effects of this medication?",
-        "How should I take this medication?",
-        "Are there any foods or medications I should avoid while taking this?",
-        "Is this medication safe during pregnancy?",
-        "What should I do if I miss a dose?"
-      ];
+      return getDefaultQuestions();
     }
   } catch (error) {
     console.error('Error generating question suggestions with Gemini:', error);
-    throw new Error('Failed to generate question suggestions');
+    // Return default questions instead of throwing
+    return getDefaultQuestions();
   }
 };
+
+// Helper function to get default questions
+function getDefaultQuestions() {
+  return [
+    "Tác dụng phụ thường gặp là gì?",
+    "Liều dùng cho người lớn?",
+    "Thuốc này tương tác với thức ăn nào?",
+    "Có cần lưu ý gì khi sử dụng?",
+    "Khi nào nên ngưng dùng thuốc?"
+  ];
+}
 
 // Hướng dẫn hệ thống cho model
 const SYSTEM_INSTRUCTION = `
@@ -234,10 +291,11 @@ const SYSTEM_INSTRUCTION = `
  * @param {string} prompt - Câu lệnh cho model (tùy chọn)
  * @returns {Promise<Object>} - Kết quả phân tích
  */
-async function analyzeMedicineImage(imageBuffer, prompt = "Nhận diện tất cả các loại thuốc trong hình ảnh và cung cấp thông tin chi tiết.") {
+async function analyzeMedicineImage(imageBuffer, prompt = "Nhận diện tất cả các loại thuốc trong hình ảnh và cung cấp thông tin chi tiết.", userApiKey) {
   try {
     // Khởi tạo model Gemini 2.0 Flash
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const currentGenAI = userApiKey ? initializeWithUserApiKey(userApiKey) : genAI;
+    const model = currentGenAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     
     // Chuẩn bị dữ liệu hình ảnh
     const imagePart = {
@@ -290,10 +348,10 @@ async function analyzeMedicineImage(imageBuffer, prompt = "Nhận diện tất c
  * @param {string} searchQuery - Truy vấn tìm kiếm (ví dụ: "Tìm thuốc có hoạt chất paracetamol")
  * @returns {Promise<Object>} - Kết quả tìm kiếm
  */
-async function searchMedicineByImage(imageBuffer, searchQuery) {
+async function searchMedicineByImage(imageBuffer, searchQuery, userApiKey) {
   try {
     const prompt = `Tìm kiếm thông tin: ${searchQuery}. Chỉ trả về kết quả phù hợp với truy vấn.`;
-    return await analyzeMedicineImage(imageBuffer, prompt);
+    return await analyzeMedicineImage(imageBuffer, prompt, userApiKey);
   } catch (error) {
     console.error('Lỗi khi tìm kiếm thuốc qua hình ảnh:', error);
     throw new Error('Không thể tìm kiếm thuốc: ' + error.message);

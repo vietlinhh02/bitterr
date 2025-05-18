@@ -41,50 +41,111 @@ const getStaticSuggestions = async (req, res) => {
 // Generate dynamic question suggestions using Gemini
 const getDynamicSuggestions = async (req, res) => {
   try {
-    const { drugInfo } = req.body;
+    const { drugInfo, userApiKey } = req.body;
+    
+    console.log("getDynamicSuggestions called with drugInfo:", JSON.stringify(drugInfo).substring(0, 200) + "...");
     
     if (!drugInfo) {
       return res.status(400).json({ success: false, message: 'Drug information is required' });
     }
     
     // Get AI-generated questions based on drug info
-    const dynamicQuestions = await geminiService.generateQuestionSuggestions(drugInfo);
+    let dynamicQuestions = [];
+    try {
+      dynamicQuestions = await geminiService.generateQuestionSuggestions(drugInfo, userApiKey);
+      console.log('Generated dynamic questions:', dynamicQuestions);
+    } catch (err) {
+      console.error('Error generating questions with Gemini:', err);
+      // Không ném lỗi ra ngoài, thay vào đó sử dụng mảng rỗng
+      dynamicQuestions = [];
+    }
     
     // Also get some static questions as a fallback
     let staticQuestions = [];
     try {
       const drugType = inferDrugType(drugInfo);
+      console.log("Inferred drug type:", drugType);
+      
       const staticResults = await QuestionSuggestion.find({ 
         $or: [
           { isGeneral: true },
-          { drugType: drugType }
+          ...(drugType ? [{ drugType: drugType }] : [])
         ]
-      }).limit(5);
+      }).limit(10);
       
       staticQuestions = staticResults.map(item => item.question);
+      console.log("Found static questions:", staticQuestions.length);
     } catch (err) {
       console.error('Error fetching static questions:', err);
+      // Trả về các câu hỏi mặc định nếu không thể lấy từ database
+      staticQuestions = [
+        "Tác dụng phụ thường gặp là gì?",
+        "Liều dùng cho người lớn?",
+        "Thuốc này tương tác với thức ăn nào?",
+        "Có cần lưu ý gì khi sử dụng?",
+        "Khi nào nên ngưng dùng thuốc?"
+      ];
     }
     
     // Combine both types of questions, prioritizing dynamic ones
-    const combinedQuestions = [...dynamicQuestions];
+    let combinedQuestions = [...dynamicQuestions];
     
-    // Add static questions that aren't too similar to dynamic ones
-    for (const question of staticQuestions) {
-      if (!isQuestionSimilar(question, dynamicQuestions)) {
-        combinedQuestions.push(question);
+    // Nếu không có câu hỏi động, sử dụng hoàn toàn các câu hỏi tĩnh
+    if (combinedQuestions.length === 0) {
+      console.log("No dynamic questions, using static questions");
+      combinedQuestions = staticQuestions;
+    } else {
+      // Add static questions that aren't too similar to dynamic ones
+      for (const question of staticQuestions) {
+        if (!isQuestionSimilar(question, dynamicQuestions)) {
+          combinedQuestions.push(question);
+        }
+        
+        if (combinedQuestions.length >= 10) break;
       }
-      
-      if (combinedQuestions.length >= 10) break;
     }
+    
+    // Đảm bảo luôn có ít nhất 3 câu hỏi
+    if (combinedQuestions.length < 3) {
+      console.log("Not enough questions, adding default questions");
+      const defaultQuestions = [
+        "Tác dụng phụ thường gặp là gì?",
+        "Liều dùng cho người lớn?",
+        "Thuốc này tương tác với thức ăn nào?"
+      ];
+      
+      for (const question of defaultQuestions) {
+        if (!combinedQuestions.includes(question)) {
+          combinedQuestions.push(question);
+        }
+        
+        if (combinedQuestions.length >= 3) break;
+      }
+    }
+    
+    console.log("Final combined questions:", combinedQuestions);
     
     return res.status(200).json({ 
       success: true, 
       suggestions: combinedQuestions
     });
   } catch (error) {
-    console.error('Error generating dynamic question suggestions:', error);
-    return res.status(500).json({ success: false, message: 'Failed to generate question suggestions' });
+    console.error('Error in getDynamicSuggestions controller:', error);
+    
+    // Trả về các câu hỏi mặc định nếu có lỗi
+    const fallbackQuestions = [
+      "Tác dụng phụ thường gặp là gì?",
+      "Liều dùng cho người lớn?",
+      "Thuốc này tương tác với thức ăn nào?",
+      "Có cần lưu ý gì khi sử dụng?",
+      "Khi nào nên ngưng dùng thuốc?"
+    ];
+    
+    return res.status(200).json({ 
+      success: true, 
+      suggestions: fallbackQuestions,
+      message: 'Using fallback questions due to an error'
+    });
   }
 };
 

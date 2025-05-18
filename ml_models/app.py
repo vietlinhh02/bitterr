@@ -43,6 +43,7 @@ KNN_FEATURES_PATH = os.path.join(BASE_DIR, "knn_features_swin_b.npy")
 KNN_LABELS_PATH = os.path.join(BASE_DIR, "knn_labels_swin_b.npy")
 CLASS_MAP_PATH = os.path.join(BASE_DIR, "class_to_idx_swin_b.json")
 KNN_MODEL_PATH = os.path.join(BASE_DIR, "knn_model_swin_b_k5_cosine.joblib") # Sử dụng khoảng cách cosine
+NEW_DRUG_MAPPING_PATH = os.path.join(BASE_DIR, "new_drug_id_to_name_mapping.json") # Thêm đường dẫn tới file mapping mới
 
 # Import các hàm từ z.py (hoặc file chứa các hàm helper của bạn)
 try:
@@ -83,6 +84,7 @@ feature_extractor = None
 knn_model = None
 class_to_idx = None
 idx_to_class = None
+new_drug_mapping = None # Thêm biến toàn cục cho mapping mới
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 logger.info(f"Sử dụng thiết bị: {device}")
 
@@ -375,6 +377,20 @@ def run_yolo_detection(yolo_model, image_input, confidence_threshold):
         traceback.print_exc()
         return []
 
+def load_new_drug_mapping(filepath):
+    """Tải mapping giữa ID thuốc và tên thuốc từ file JSON."""
+    try:
+        if not os.path.exists(filepath):
+            logger.error(f"Không tìm thấy file mapping: {filepath}")
+            return {}
+        with open(filepath, 'r', encoding='utf-8') as f:
+            mapping = json.load(f)
+        logger.info(f"Đã tải mapping mới với {len(mapping)} loại thuốc.")
+        return mapping
+    except Exception as e:
+        logger.error(f"Lỗi khi tải file mapping thuốc: {e}")
+        return {}
+
 def predict_with_knn(features_np, knn_classifier, idx_to_class_map):
     """Dự đoán lớp từ features bằng KNN - phiên bản tối ưu hiệu suất."""
     if features_np is None or knn_classifier is None or idx_to_class_map is None: return None
@@ -409,8 +425,13 @@ def predict_with_knn(features_np, knn_classifier, idx_to_class_map):
                 "confidence": float(confidence)
             }
         else:
-            # Lấy tên thuốc từ idx_to_class map
-            medication_name_str = idx_to_class_map.get(pred_class_idx)
+            # Lấy tên thuốc từ mapping mới nếu có
+            medication_id = str(pred_class_idx)
+            if new_drug_mapping and medication_id in new_drug_mapping:
+                medication_name_str = new_drug_mapping[medication_id]
+            else:
+                # Fallback: Lấy tên thuốc từ idx_to_class map cũ
+                medication_name_str = idx_to_class_map.get(pred_class_idx)
             
             # Kiểm tra nếu không tìm thấy thuốc trong database
             if medication_name_str is None:
@@ -418,7 +439,7 @@ def predict_with_knn(features_np, knn_classifier, idx_to_class_map):
                 
             result = {
                 "medication_name": medication_name_str,
-                "medication_id": str(pred_class_idx),
+                "medication_id": medication_id,
                 "confidence": float(confidence)
             }
             
@@ -465,7 +486,7 @@ def draw_detections(image_pil, detections_list):
 
 # --- Tải Mô hình khi Khởi động ---
 def load_models():
-    global yolo_model, feature_extractor, knn_model, class_to_idx, idx_to_class
+    global yolo_model, feature_extractor, knn_model, class_to_idx, idx_to_class, new_drug_mapping
     models_loaded = True
     try:
         logger.info("Bắt đầu tải các mô hình...")
@@ -488,7 +509,11 @@ def load_models():
                  logger.warning(f"Class map file rỗng hoặc lỗi. Sử dụng số lớp mặc định.")
                  num_classes = 107 # Hoặc giá trị mặc định của bạn
 
-        # 3. Swin Feature Extractor
+        # 3. Tải mapping mới giữa ID thuốc và tên thuốc
+        logger.info(f"Tải mapping mới từ {NEW_DRUG_MAPPING_PATH}")
+        new_drug_mapping = load_new_drug_mapping(NEW_DRUG_MAPPING_PATH)
+
+        # 4. Swin Feature Extractor
         if not os.path.exists(SWIN_MODEL_PATH):
             logger.error(f"Không tìm thấy weights Swin: {SWIN_MODEL_PATH}")
             models_loaded = False
@@ -497,7 +522,7 @@ def load_models():
             feature_extractor = get_swin_feature_extractor("swin_b", SWIN_MODEL_PATH, num_classes, device)
             if feature_extractor is None: models_loaded = False
 
-        # 4. KNN Model (Tải hoặc Fit)
+        # 5. KNN Model (Tải hoặc Fit)
         if not os.path.exists(KNN_FEATURES_PATH) or not os.path.exists(KNN_LABELS_PATH):
             logger.error(f"Không tìm thấy file features/labels KNN: {KNN_FEATURES_PATH} / {KNN_LABELS_PATH}")
             models_loaded = False

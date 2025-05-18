@@ -4,6 +4,9 @@ const bcrypt = require('bcryptjs');
 const fs = require('fs').promises;
 const path = require('path');
 
+// Đường dẫn tới avatar mặc định
+const DEFAULT_AVATAR = '/uploads/avatars/default-avatar.svg';
+
 // Lấy thông tin người dùng
 const getUserProfile = async (req, res) => {
     try {
@@ -12,6 +15,11 @@ const getUserProfile = async (req, res) => {
         
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        
+        // Đảm bảo user luôn có avatar, nếu không có thì dùng avatar mặc định
+        if (!user.avatar) {
+            user.avatar = DEFAULT_AVATAR;
         }
         
         return res.status(200).json({ success: true, user });
@@ -119,7 +127,7 @@ const uploadAvatar = async (req, res) => {
         await fs.access(oldAvatarPath);
         await fs.unlink(oldAvatarPath);
       } catch (error) {
-        console.log('Không tìm thấy file avatar cũ hoặc có lỗi khi xóa:', error);
+        // Bỏ qua lỗi khi xóa avatar cũ
       }
     }
 
@@ -139,13 +147,12 @@ const uploadAvatar = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error in uploadAvatar:', error);
     // Xóa file vừa upload nếu có lỗi
     if (req.file) {
       try {
         await fs.unlink(req.file.path);
       } catch (unlinkError) {
-        console.error('Error deleting file:', unlinkError);
+        // Bỏ qua lỗi khi xóa file
       }
     }
     res.status(500).json({
@@ -155,4 +162,27 @@ const uploadAvatar = async (req, res) => {
   }
 };
 
-module.exports = { getUserProfile, updateUserProfile, changePassword, uploadAvatar };
+// Cập nhật API key của Gemini
+const updateGeminiApiKey = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { geminiApiKey } = req.body;
+        
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $set: { geminiApiKey } },
+            { new: true }
+        ).select('-password');
+        
+        return res.status(200).json({ 
+            success: true, 
+            message: 'API key đã được cập nhật thành công',
+            user: updatedUser 
+        });
+    } catch (error) {
+        console.error('Error updating Gemini API key:', error);
+        return res.status(500).json({ success: false, message: 'Lỗi server khi cập nhật API key' });
+    }
+};
+
+module.exports = { getUserProfile, updateUserProfile, changePassword, uploadAvatar, updateGeminiApiKey };

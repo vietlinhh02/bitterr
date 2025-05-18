@@ -56,27 +56,77 @@ API.interceptors.request.use((req) => {
   const token = localStorage.getItem('token');
   if (token) {
     req.headers.Authorization = `Bearer ${token}`;
+    // Chỉ log 10 ký tự đầu của token để bảo mật
+    console.log(`API request với token: ${token.substring(0, 10)}...`);
+  } else {
+    console.log('API request không có token');
   }
+  
+  if (req.url.includes('gemini-api-key')) {
+    console.log('API call update Gemini API key, method:', req.method, 'headers:', JSON.stringify(req.headers));
+  }
+  
   return req;
 });
 
 // Thêm interceptor để xử lý lỗi
 API.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Xử lý lỗi 401 (Unauthorized)
-    if (error.response && error.response.status === 401) {
-      // Kiểm tra xem có phải là lỗi token hết hạn không
-      const isTokenExpired = error.response.data && 
-        (error.response.data.message === 'Token expired' || 
-         error.response.data.message === 'Invalid token');
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // Nếu lỗi là 401 (Unauthorized) hoặc 403 (Forbidden) và chưa thử refresh token
+    if ((error.response?.status === 401 || error.response?.status === 403) && 
+        !originalRequest._retry && 
+        !originalRequest.url.includes('refresh-token')) {
       
-      if (isTokenExpired) {
-        // Xóa token và chuyển hướng đến trang đăng nhập
-        localStorage.removeItem('token');
-        window.location.href = '/login?expired=true';
+      console.log('Token không hợp lệ hoặc hết hạn, thử refresh token...');
+      originalRequest._retry = true;
+      
+      try {
+        console.log('Đang thử refresh token...');
+        // Gọi API refresh token
+        const refreshResponse = await axios.post(
+          'http://localhost:5000/api/auth/refresh-token', 
+          {}, 
+          { withCredentials: true }
+        );
+        
+        if (refreshResponse.data.success) {
+          console.log('Refresh token thành công, lưu token mới');
+          // Lưu token mới
+          localStorage.setItem('token', refreshResponse.data.accessToken);
+          
+          // Cập nhật token trong request gốc và thử lại
+          originalRequest.headers.Authorization = `Bearer ${refreshResponse.data.accessToken}`;
+          return API(originalRequest);
+        } else {
+          console.log('Refresh token không thành công');
+          throw new Error('Failed to refresh token');
+        }
+      } catch (refreshError) {
+        console.error('Lỗi khi refresh token:', refreshError);
+        
+        // Kiểm tra xem có phải lỗi token hết hạn không
+        const isTokenExpired = error.response?.data && 
+          (error.response.data.code === 'TOKEN_EXPIRED' || 
+           error.response.data.expired === true);
+        
+        if (isTokenExpired) {
+          // Xóa token và chuyển hướng đến trang đăng nhập
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          
+          // Sử dụng setTimeout để tránh lỗi "Cannot update during an existing state transition"
+          setTimeout(() => {
+            window.location.href = '/login?expired=true';
+          }, 100);
+        }
+        
+        return Promise.reject(error);
       }
     }
+    
     return Promise.reject(error);
   }
 );
@@ -205,8 +255,26 @@ export const askGeminiAboutDrug = async (data) => {
   try {
     console.log('Sending request to Gemini API:', data);
     
+    // Lấy API key của người dùng từ localStorage hoặc từ global user state
+    let userApiKey = localStorage.getItem('geminiApiKey');
+    
+    try {
+      const userFromLocalStorage = JSON.parse(localStorage.getItem('user') || '{}');
+      if (userFromLocalStorage && userFromLocalStorage.geminiApiKey) {
+        userApiKey = userFromLocalStorage.geminiApiKey;
+      }
+    } catch (e) {
+      // Bỏ qua lỗi khi parse JSON
+      console.error('Error parsing user from localStorage:', e);
+    }
+    
+    const requestData = {
+      ...data,
+      userApiKey: userApiKey || null // Gửi null nếu không có API key của người dùng
+    };
+    
     // Gửi dữ liệu trực tiếp không cần xử lý trung gian
-    const response = await API.post('/gemini/ask', data);
+    const response = await API.post('/gemini/ask', requestData);
     
     console.log('Gemini API response:', response);
     return response;
@@ -234,11 +302,75 @@ export const uploadAvatar = (formData) => {
   });
 };
 
+// API để lấy avatar
+export const getAvatarUrl = (filename) => {
+  if (!filename) return null;
+  
+  // Nếu là avatar mặc định
+  if (filename === 'default-avatar.svg' || filename.includes('default-avatar')) {
+    return `http://localhost:5000/uploads/avatars/default-avatar.svg?t=${new Date().getTime()}`;
+  }
+  
+  // Trích xuất tên file từ đường dẫn đầy đủ nếu cần
+  const filenameOnly = filename.split('/').pop();
+  
+  // Thêm timestamp để tránh cache
+  const timestamp = new Date().getTime();
+  
+  // Sử dụng API endpoint thay vì đường dẫn tĩnh
+  return `http://localhost:5000/api/users/avatar/${filenameOnly}?t=${timestamp}`;
+};
+
 // API để xử lý thuốc yêu thích
 export const addFavoriteDrug = (drugData) => API.post('/favorites', drugData);
 
 export const getFavoriteDrugs = () => API.get('/favorites');
 
 export const removeFavoriteDrug = (favoriteId) => API.delete(`/favorites/${favoriteId}`);
+
+// API để lấy gợi ý câu hỏi
+export const getStaticQuestionSuggestions = (params) => {
+  return API.get('/question-suggestions/static', { params });
+};
+
+export const getDynamicQuestionSuggestions = (drugInfo) => {
+  // Lấy API key của người dùng từ localStorage hoặc từ global user state
+  let userApiKey = localStorage.getItem('geminiApiKey');
+  
+  try {
+    const userFromLocalStorage = JSON.parse(localStorage.getItem('user') || '{}');
+    if (userFromLocalStorage && userFromLocalStorage.geminiApiKey) {
+      userApiKey = userFromLocalStorage.geminiApiKey;
+    }
+  } catch (e) {
+    // Bỏ qua lỗi khi parse JSON
+    console.error('Error parsing user from localStorage:', e);
+  }
+  
+  return API.post('/question-suggestions/dynamic', { 
+    drugInfo,
+    userApiKey: userApiKey || null // Gửi null nếu không có API key của người dùng
+  });
+};
+
+// API để cập nhật Gemini API key
+export const updateGeminiApiKey = (apiKeyData) => {
+  return API.put('/users/gemini-api-key', apiKeyData);
+};
+
+// Hàm để lấy Gemini API key của người dùng
+export const getGeminiApiKey = async () => {
+  try {
+    // Lấy từ thông tin người dùng
+    const response = await getUserProfile();
+    if (response.data?.user?.geminiApiKey) {
+      return response.data.user.geminiApiKey;
+    }
+    return null;
+  } catch (error) {
+    console.error('Lỗi khi lấy Gemini API key:', error);
+    return null;
+  }
+};
 
 export default API;

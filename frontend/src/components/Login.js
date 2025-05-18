@@ -82,13 +82,18 @@ function Login() {
       const response = await login(formData);
       
       if (response.data.success) {
-        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('token', response.data.accessToken);
         updateUser(response.data.user);
         navigate('/');
       }
     } catch (error) {
       console.error('Login error:', error);
+      console.error('Response data:', error.response?.data);
+      console.error('Status:', error.response?.status);
+      console.error('Headers:', error.response?.headers);
+      
       setError(error.response?.data?.message || 'Đã xảy ra lỗi khi đăng nhập');
+      setOpenSnackbar(true);
     } finally {
       setLoading(false);
     }

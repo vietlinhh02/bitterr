@@ -166,12 +166,12 @@ async function analyzeImageWithGemini(imageBuffer) {
 }
 
 // Hàm hỏi Gemini về văn bản đã phát hiện
-const askGeminiDirectly = async (ocrText, question, originalRes) => { 
+const askGeminiDirectly = async (ocrText, question, originalRes, userApiKey) => { 
     try {
         if (!question) {
           return originalRes.status(400).json({message: "Missing user question"})
         }
-        const answer = await geminiService.askGeminiWithOCRText(ocrText, question);
+        const answer = await geminiService.askGeminiWithOCRText(ocrText, question, userApiKey);
 
         originalRes.setHeader('Content-Type', 'text/plain; charset=utf-8');
         originalRes.setHeader('Transfer-Encoding', 'chunked');

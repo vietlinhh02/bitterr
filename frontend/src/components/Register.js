@@ -8,22 +8,25 @@ import {
   Grid,
   Snackbar,
   IconButton,
-  CircularProgress
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { register } from '../services/api';
 import { useUser } from '../contexts/UserContext';
 
 function Register() {
-  const { updateUser } = useUser();
+  const { updateUser, clearUser } = useUser();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [alertSeverity, setAlertSeverity] = useState('error');
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
@@ -32,12 +35,14 @@ function Register() {
     // Kiểm tra dữ liệu nhập
     if (!username || !email || !password) {
       setError('Vui lòng điền đầy đủ thông tin');
+      setAlertSeverity('error');
       setOpenSnackbar(true);
       return;
     }
 
     if (password !== confirmPassword) {
       setError('Mật khẩu xác nhận không khớp');
+      setAlertSeverity('error');
       setOpenSnackbar(true);
       return;
     }
@@ -46,21 +51,28 @@ function Register() {
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/register', {
+      const response = await register({
         username,
         email,
         password
       });
       
-      if (response.data && response.data.token) {
-        // Lưu token và thông tin người dùng vào localStorage
-        localStorage.setItem('token', response.data.token);
-        updateUser(response.data.user);
+      if (response.data && response.data.accessToken) {
+        // Hiển thị thông báo thành công
+        setSuccess('Đăng ký thành công! Đang chuyển hướng đến trang đăng nhập...');
+        setAlertSeverity('success');
+        setOpenSnackbar(true);
         
-        // Chuyển hướng đến trang tìm kiếm thuốc
-        navigate('/fda-drugs');
+        // Xóa dữ liệu người dùng cũ để tránh xung đột
+        clearUser(); // Xóa dữ liệu trong localStorage và các cache khác
+        
+        // Chuyển hướng đến trang đăng nhập sau 3 giây
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
       } else {
         setError('Đăng ký thất bại. Vui lòng thử lại.');
+        setAlertSeverity('error');
         setOpenSnackbar(true);
       }
     } catch (err) {
@@ -73,6 +85,7 @@ function Register() {
         setError('Không thể kết nối đến server. Vui lòng thử lại sau.');
       }
       
+      setAlertSeverity('error');
       setOpenSnackbar(true);
     } finally {
       setLoading(false);
@@ -165,18 +178,20 @@ function Register() {
       <Snackbar
         anchorOrigin={{
           vertical: 'bottom',
-          horizontal: 'left',
+          horizontal: 'center',
         }}
         open={openSnackbar}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        message={error}
-        action={
-          <IconButton size="small" color="inherit" onClick={handleCloseSnackbar}>
-            <CloseIcon fontSize="small" />
-          </IconButton>
-        }
-      />
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={alertSeverity} 
+          sx={{ width: '100%' }}
+        >
+          {alertSeverity === 'success' ? success : error}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   AppBar, 
   Toolbar, 
@@ -35,6 +35,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import PillIcon from './common/PillIcon';
+import { getAvatarUrl } from '../services/api';
 
 function Navigation() {
   const theme = useTheme();
@@ -43,9 +44,35 @@ function Navigation() {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [userMenuAnchorEl, setUserMenuAnchorEl] = React.useState(null);
   const { user: contextUser, updateUser } = useUser();
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarError, setAvatarError] = useState(false);
   
   // Kiểm tra xem người dùng đã đăng nhập chưa
   const isLoggedIn = localStorage.getItem('token') !== null;
+
+  // Cập nhật URL avatar khi người dùng thay đổi
+  useEffect(() => {
+    if (contextUser && contextUser.avatar) {
+      // Thêm timestamp để tránh cache
+      const timestamp = new Date().getTime();
+      
+      if (contextUser.avatar.includes('default-avatar')) {
+        // Nếu là avatar mặc định, dùng đường dẫn gốc
+        setAvatarUrl(`${contextUser.avatar}?t=${timestamp}`);
+      } else {
+        // Đối với avatar tùy chỉnh, sử dụng đường dẫn đã xử lý
+        // Lấy tên file từ đường dẫn
+        const filename = contextUser.avatar.split('/').pop();
+        // Tạo URL với timestamp
+        setAvatarUrl(`${getAvatarUrl(filename)}?t=${timestamp}`);
+      }
+      
+      // Reset lỗi khi có avatar mới
+      setAvatarError(false);
+    } else {
+      setAvatarUrl("");
+    }
+  }, [contextUser]);
   
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -67,6 +94,11 @@ function Navigation() {
     localStorage.removeItem('token');
     updateUser(null);
     navigate('/login');
+  };
+
+  const handleAvatarError = () => {
+    console.error("Không thể tải avatar:", avatarUrl);
+    setAvatarError(true);
   };
 
   const menuItems = [
@@ -310,11 +342,12 @@ function Navigation() {
                   <>
                     <Tooltip title="Tùy chọn người dùng">
                       <IconButton onClick={handleUserMenuOpen} sx={{ p: 0 }}>
-                        {contextUser && contextUser.avatar ? (
+                        {avatarUrl && !avatarError ? (
                           <Avatar 
-                            alt={contextUser.username} 
-                            src={`${contextUser.avatar}?t=${new Date().getTime()}`} 
+                            alt={contextUser?.username || "User"} 
+                            src={avatarUrl}
                             sx={{ width: 40, height: 40 }}
+                            onError={handleAvatarError}
                           />
                         ) : (
                           <Avatar 
@@ -325,7 +358,10 @@ function Navigation() {
                               color: 'white'
                             }}
                           >
-                            <PersonIcon />
+                            {contextUser?.username ? 
+                              contextUser.username.charAt(0).toUpperCase() : 
+                              <PersonIcon />
+                            }
                           </Avatar>
                         )}
                       </IconButton>

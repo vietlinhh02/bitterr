@@ -26,10 +26,11 @@ import {
   ContentCopy as ContentCopyIcon,
   PhotoCamera as PhotoCameraIcon
 } from '@mui/icons-material';
-import { askGeminiAboutDrug, getChatHistory, deleteChatHistoryItem } from '../services/api';
+import { askGeminiAboutDrug, getChatHistory, deleteChatHistoryItem, getStaticQuestionSuggestions, getDynamicQuestionSuggestions } from '../services/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import DrugSearchDialog from './DrugSearchDialog';
+import { useUser } from '../contexts/UserContext';
 
 // Import các components từ chat/index.js
 import {
@@ -48,6 +49,7 @@ const ChatWithAI = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
+  const { user, hasGeminiApiKey } = useUser(); // Lấy thông tin từ context
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -59,19 +61,25 @@ const ChatWithAI = () => {
   const [openDrugSearchDialog, setOpenDrugSearchDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [showChatHistory, setShowChatHistory] = useState(true);
+  const [usingCustomApiKey, setUsingCustomApiKey] = useState(false);
   
   // Kiểm tra kích thước màn hình
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // Trạng thái drawer khi ở mobile
   const [drawerOpen, setDrawerOpen] = useState(false);
   
+  // Câu hỏi gợi ý từ backend
   const [suggestedQuestions, setSuggestedQuestions] = useState([
     "Tác dụng phụ thường gặp là gì?",
     "Liều dùng cho người lớn?",
-    "Thuốc này tương tác với thức ăn nào?",
-    "Có cần lưu ý gì khi sử dụng?",
-    "Khi nào nên ngưng dùng thuốc?",
+    "Thuốc này tương tác với thức ăn nào?"
   ]);
+
+  // Kiểm tra xem người dùng có sử dụng API key của riêng họ không
+  useEffect(() => {
+    // Sử dụng hasGeminiApiKey từ UserContext
+    setUsingCustomApiKey(hasGeminiApiKey);
+  }, [hasGeminiApiKey]);
 
   // Ẩn lịch sử chat khi chuyển sang mobile
   useEffect(() => {
@@ -82,6 +90,63 @@ const ChatWithAI = () => {
     }
   }, [isMobile]);
 
+  // Tải gợi ý câu hỏi từ backend khi có thông tin thuốc
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (drugInfo) {
+        console.log("Fetching suggestions for drug:", drugInfo.name || drugInfo.generic_name || drugInfo.brand_name);
+        try {
+          // Thử lấy gợi ý động từ backend dựa trên thông tin thuốc
+          const response = await getDynamicQuestionSuggestions(drugInfo);
+          console.log("Dynamic suggestions response:", response.data);
+          
+          if (response.data?.success && response.data?.suggestions?.length > 0) {
+            console.log("Setting dynamic suggestions:", response.data.suggestions);
+            setSuggestedQuestions(response.data.suggestions);
+          } else {
+            // Nếu không có gợi ý động, dùng gợi ý tĩnh (chung)
+            try {
+              const staticResponse = await getStaticQuestionSuggestions({
+                isGeneral: true
+              });
+              console.log("Static suggestions response:", staticResponse.data);
+              
+              if (staticResponse.data?.success && staticResponse.data?.suggestions?.length > 0) {
+                const questions = staticResponse.data.suggestions.map(item => item.question);
+                console.log("Setting static suggestions:", questions);
+                setSuggestedQuestions(questions);
+              }
+            } catch (staticError) {
+              console.error('Lỗi khi tải gợi ý câu hỏi tĩnh:', staticError);
+              // Giữ nguyên các câu hỏi mặc định hiện tại
+            }
+          }
+        } catch (error) {
+          console.error('Lỗi khi tải gợi ý câu hỏi:', error);
+          
+          // Nếu có lỗi với API động, thử dùng API tĩnh
+          try {
+            const staticResponse = await getStaticQuestionSuggestions({
+              isGeneral: true
+            });
+            console.log("Fallback static suggestions:", staticResponse.data);
+            
+            if (staticResponse.data?.success && staticResponse.data?.suggestions?.length > 0) {
+              const questions = staticResponse.data.suggestions.map(item => item.question);
+              console.log("Setting fallback suggestions:", questions);
+              setSuggestedQuestions(questions);
+            }
+          } catch (staticError) {
+            console.error('Lỗi khi tải gợi ý câu hỏi tĩnh:', staticError);
+            // Giữ nguyên các câu hỏi mặc định hiện tại
+          }
+        }
+      }
+    };
+    
+    fetchSuggestions();
+  }, [drugInfo]);
+  
   const scrollToBottom = () => { 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); 
   };
@@ -183,7 +248,18 @@ const ChatWithAI = () => {
       setMessages(prev => [...prev, aiMessage]);
       
       if (response.data.suggestedQuestions?.length) {
+        // Sử dụng gợi ý mới từ AI nếu có
         setSuggestedQuestions(response.data.suggestedQuestions);
+      } else {
+        // Nếu AI không gợi ý, cố gắng tải lại gợi ý từ backend
+        try {
+          const suggestResponse = await getDynamicQuestionSuggestions(drugInfo);
+          if (suggestResponse.data?.success && suggestResponse.data?.suggestions?.length > 0) {
+            setSuggestedQuestions(suggestResponse.data.suggestions);
+          }
+        } catch (error) {
+          console.error('Lỗi khi lấy gợi ý câu hỏi mới:', error);
+        }
       }
     } catch (err) {
       console.error('Lỗi khi gửi tin nhắn:', err);
@@ -212,6 +288,9 @@ const ChatWithAI = () => {
     setTimeout(() => {
       const e = { preventDefault: () => {} }; // Giả lập sự kiện
       handleSendMessage(e);
+      
+      // Lưu ý: Có thể thêm API để tăng độ phổ biến của câu hỏi này trong database
+      // nhưng không ưu tiên trong lần cập nhật này
     }, 0);
   };
 
@@ -219,7 +298,7 @@ const ChatWithAI = () => {
   
     const handleCloseDrugSearchDialog = () => setOpenDrugSearchDialog(false);
   
-  const handleDrugSelected = (selectedDrug) => {
+  const handleDrugSelected = async (selectedDrug) => {
     setDrugInfo(selectedDrug);
     setOpenDrugSearchDialog(false);
     
@@ -235,6 +314,71 @@ const ChatWithAI = () => {
     setMessages([welcomeMessage]);
     setInput('');
     setError(null);
+    
+    // Tải gợi ý câu hỏi cụ thể cho thuốc vừa chọn
+    try {
+      // Ưu tiên dùng gợi ý động thông minh
+      const dynamicResponse = await getDynamicQuestionSuggestions(selectedDrug);
+      
+      if (dynamicResponse.data?.success && dynamicResponse.data?.suggestions?.length > 0) {
+        setSuggestedQuestions(dynamicResponse.data.suggestions);
+      } else {
+        // Nếu không có gợi ý động, thử tìm gợi ý tĩnh từ database
+        try {
+          let query = {};
+          
+          if (selectedDrug.generic_name) {
+            query.genericName = selectedDrug.generic_name;
+          } else if (selectedDrug.brand_name) {
+            query.brandName = selectedDrug.brand_name;
+          }
+          
+          const staticResponse = await getStaticQuestionSuggestions(query);
+          
+          if (staticResponse.data?.success && staticResponse.data?.suggestions?.length > 0) {
+            setSuggestedQuestions(staticResponse.data.suggestions.map(item => item.question));
+          } else {
+            // Nếu vẫn không có, dùng các câu hỏi chung
+            try {
+              const generalResponse = await getStaticQuestionSuggestions({ isGeneral: true });
+              
+              if (generalResponse.data?.success && generalResponse.data?.suggestions?.length > 0) {
+                setSuggestedQuestions(generalResponse.data.suggestions.map(item => item.question));
+              }
+            } catch (generalError) {
+              console.error('Lỗi khi tải gợi ý câu hỏi chung:', generalError);
+              // Giữ nguyên gợi ý mặc định nếu tất cả đều không có
+            }
+          }
+        } catch (staticError) {
+          console.error('Lỗi khi tải gợi ý câu hỏi tĩnh:', staticError);
+          // Nếu không lấy được gợi ý tĩnh, thử lấy gợi ý chung
+          try {
+            const generalResponse = await getStaticQuestionSuggestions({ isGeneral: true });
+            
+            if (generalResponse.data?.success && generalResponse.data?.suggestions?.length > 0) {
+              setSuggestedQuestions(generalResponse.data.suggestions.map(item => item.question));
+            }
+          } catch (generalError) {
+            console.error('Lỗi khi tải gợi ý câu hỏi chung:', generalError);
+            // Giữ nguyên gợi ý mặc định nếu tất cả đều không có
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải gợi ý câu hỏi cho thuốc mới:', error);
+      // Nếu không lấy được gợi ý động, thử lấy gợi ý tĩnh chung
+      try {
+        const generalResponse = await getStaticQuestionSuggestions({ isGeneral: true });
+        
+        if (generalResponse.data?.success && generalResponse.data?.suggestions?.length > 0) {
+          setSuggestedQuestions(generalResponse.data.suggestions.map(item => item.question));
+        }
+      } catch (generalError) {
+        console.error('Lỗi khi tải gợi ý câu hỏi chung:', generalError);
+        // Giữ nguyên gợi ý mặc định nếu tất cả đều không có
+      }
+    }
   };
   
     const handleCloseSnackbar = () => setOpenSnackbar(false);
@@ -353,7 +497,26 @@ const ChatWithAI = () => {
               handleSelectDrug={handleSelectDrug}
               openHistoryDialog={() => isMobile ? setDrawerOpen(true) : null}
               isMobile={isMobile}
+              usingCustomApiKey={usingCustomApiKey}
             />
+            
+            {/* Thông tin API key */}
+            {usingCustomApiKey && (
+              <Box sx={{ 
+                bgcolor: 'success.light', 
+                color: 'success.contrastText', 
+                px: 2, 
+                py: 0.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.75rem'
+              }}>
+                <Typography variant="caption" sx={{ fontWeight: 'medium' }}>
+                  Đang sử dụng API key của bạn
+                </Typography>
+              </Box>
+            )}
             
             {/* Thông tin thuốc */}
             <DrugInfo drugInfo={drugInfo} handleSelectDrug={handleSelectDrug} />

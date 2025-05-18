@@ -6,28 +6,133 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Khôi phục thông tin user từ localStorage khi component được mount
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    try {
+      // Khôi phục thông tin user từ localStorage khi component được mount
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        
+        // Nếu có API key trong localStorage nhưng không có trong user data, thêm vào
+        const geminiApiKey = localStorage.getItem('geminiApiKey');
+        if (geminiApiKey && userData && !userData.geminiApiKey) {
+          userData.geminiApiKey = geminiApiKey;
+          // Lưu lại để đồng bộ
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+        
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('Error parsing user data from localStorage:', error);
+      // Xóa dữ liệu người dùng không hợp lệ
+      localStorage.removeItem('user');
     }
   }, []);
 
   const updateUser = (newUserData) => {
-    // Cập nhật thông tin user trong context và localStorage
-    setUser(newUserData);
-    localStorage.setItem('user', JSON.stringify(newUserData));
+    try {
+      // Cập nhật thông tin user trong context và localStorage
+      if (newUserData) {
+        // Thêm timestamp cho việc cập nhật để tránh vấn đề cache
+        const userWithTimestamp = {
+          ...newUserData,
+          _lastUpdated: new Date().getTime()
+        };
+        
+        // Cập nhật state
+        setUser(userWithTimestamp);
+        
+        // Cập nhật localStorage
+        localStorage.setItem('user', JSON.stringify(userWithTimestamp));
+        
+        // Xóa các cache khác có thể chứa thông tin người dùng cũ
+        sessionStorage.removeItem('userProfileCache');
+      }
+    } catch (error) {
+      console.error('Error updating user data:', error);
+    }
+  };
+
+  const clearUser = () => {
+    try {
+      // Xóa tất cả thông tin người dùng khỏi state và storage
+      setUser(null);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      sessionStorage.removeItem('userProfileCache');
+      
+      // Giữ lại geminiApiKey nếu cần
+      const geminiApiKey = localStorage.getItem('geminiApiKey');
+      if (!geminiApiKey) {
+        localStorage.removeItem('geminiApiKey');
+      }
+      
+      console.log('Đã xóa thông tin người dùng cũ');
+    } catch (error) {
+      console.error('Error clearing user data:', error);
+    }
   };
 
   const updateAvatar = (avatarUrl) => {
-    // Cập nhật avatar trong context và localStorage
-    const updatedUser = { ...user, avatar: avatarUrl };
-    setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+    try {
+      // Cập nhật avatar trong context và localStorage
+      if (user) {
+        const updatedUser = { 
+          ...user, 
+          avatar: avatarUrl,
+          _lastUpdated: new Date().getTime()
+        };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        sessionStorage.removeItem('userProfileCache');
+      }
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+    }
+  };
+  
+  const updateGeminiApiKey = (apiKey) => {
+    try {
+      // Cập nhật Gemini API key trong context và localStorage
+      if (user) {
+        const updatedUser = { 
+          ...user, 
+          geminiApiKey: apiKey,
+          _lastUpdated: new Date().getTime()
+        };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      
+      // Lưu key vào localStorage cũ để tương thích với code đã tồn tại
+      if (apiKey) {
+        localStorage.setItem('geminiApiKey', apiKey);
+      } else {
+        localStorage.removeItem('geminiApiKey');
+      }
+      
+      // Xóa cache
+      sessionStorage.removeItem('userProfileCache');
+    } catch (error) {
+      console.error('Error updating Gemini API key:', error);
+      // Đảm bảo vẫn lưu API key vào localStorage ngay cả khi có lỗi
+      if (apiKey) {
+        localStorage.setItem('geminiApiKey', apiKey);
+      } else {
+        localStorage.removeItem('geminiApiKey');
+      }
+    }
   };
 
   return (
-    <UserContext.Provider value={{ user, updateUser, updateAvatar }}>
+    <UserContext.Provider value={{ 
+      user, 
+      updateUser,
+      clearUser, 
+      updateAvatar, 
+      updateGeminiApiKey,
+      hasGeminiApiKey: !!((user && user.geminiApiKey) || localStorage.getItem('geminiApiKey'))
+    }}>
       {children}
     </UserContext.Provider>
   );

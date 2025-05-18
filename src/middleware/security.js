@@ -28,7 +28,9 @@ const authLimiter = rateLimit({
 // Middleware bảo mật
 const securityMiddleware = (app) => {
   // Set security HTTP headers
-  app.use(helmet());
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+  }));
 
   // Giới hạn request
   app.use('/api', limiter);

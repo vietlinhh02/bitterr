@@ -42,13 +42,20 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 
 // Phục vụ các tệp tĩnh
-// Cấu hình nghiêm ngặt hơn, chỉ cho phép truy cập vào thư mục uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
   setHeaders: (res, path) => {
     // Đặt header cụ thể cho các file hình ảnh
-    if (path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.jpeg')) {
-      res.setHeader('Content-Type', 'image/' + path.split('.').pop());
+    if (path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.svg')) {
+      let contentType = 'image/' + path.split('.').pop();
+      // SVG cần content-type đặc biệt
+      if (path.endsWith('.svg')) {
+        contentType = 'image/svg+xml';
+      }
+      res.setHeader('Content-Type', contentType);
       res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache 1 ngày
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     }
   }
 }));
@@ -64,7 +71,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Áp dụng bảo vệ CSRF cho các routes cần bảo vệ (không bao gồm các API endpoints stateless)
 // Tạm thời bỏ CSRF protection để test
 // app.use('/api/auth/*', csrfProtection, setupCsrf);
-app.use('/api/users/*', csrfProtection, setupCsrf);
+// app.use('/api/users/*', csrfProtection, setupCsrf);
 
 // Xử lý lỗi CSRF
 app.use(handleCsrfError);

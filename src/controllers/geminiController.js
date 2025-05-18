@@ -46,6 +46,9 @@ const askAboutDrug = async (req, res) => {
   try {
     console.log('Request body:', req.body);
     
+    // Lấy API key của người dùng nếu có
+    const userApiKey = req.body.userApiKey || null;
+    
     // Kiểm tra cấu trúc dữ liệu để xác định nguồn gốc
     if (req.body.drugInfo) {
       // Trường hợp trực tiếp từ trang chi tiết
@@ -112,7 +115,8 @@ const askAboutDrug = async (req, res) => {
         productInfo,
         question,
         messages: req.body.messages || [],
-        fullDrugInfo: sanitizedDrugInfo // Gửi toàn bộ dữ liệu gốc đã được loại bỏ HTML
+        fullDrugInfo: sanitizedDrugInfo, // Gửi toàn bộ dữ liệu gốc đã được loại bỏ HTML
+        userApiKey // Thêm API key của người dùng
       });
       
       // Lưu vào lịch sử chat nếu người dùng đã đăng nhập và createHistory không phải false
@@ -169,7 +173,8 @@ const askAboutDrug = async (req, res) => {
       const answer = await geminiService.askGeminiWithFDA({ 
         productInfo: sanitizedProductInfo, 
         question,
-        messages: req.body.messages || [] 
+        messages: req.body.messages || [],
+        userApiKey // Thêm API key của người dùng
       });
       
       // Lưu lịch sử chat

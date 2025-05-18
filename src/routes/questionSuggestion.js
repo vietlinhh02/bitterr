@@ -124,7 +124,7 @@ router.get('/static', questionSuggestionController.getStaticSuggestions);
  *       500:
  *         description: Server error
  */
-router.post('/dynamic', authMiddleware, questionSuggestionController.getDynamicSuggestions);
+router.post('/dynamic', questionSuggestionController.getDynamicSuggestions);
 
 /**
  * @swagger
