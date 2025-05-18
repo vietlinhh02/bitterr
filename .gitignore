@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 uploads/
+ml_models/static/
+src/data/
+frontend/buid/
 .cursor
 # Environment variables
 .env
