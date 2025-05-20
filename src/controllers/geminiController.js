@@ -128,6 +128,20 @@ const askAboutDrug = async (req, res) => {
             drugQuery
           });
 
+          // Tạo đối tượng tin nhắn mới
+          const newMessages = [
+            {
+              role: 'user',
+              content: question,
+              timestamp: new Date()
+            },
+            {
+              role: 'assistant',
+              content: answer,
+              timestamp: new Date()
+            }
+          ];
+
           if (!existingChat) {
             // Nếu chưa có thì tạo mới
             const newChatHistory = new ChatHistory({
@@ -136,6 +150,7 @@ const askAboutDrug = async (req, res) => {
               generic_name: sanitizedDrugInfo.generic_name || sanitizedDrugInfo.name,
               question,
               answer,
+              messages: newMessages, // Thêm mảng messages
               drugInfo: {
                 name: sanitizedDrugInfo.name,
                 generic_name: sanitizedDrugInfo.generic_name,
@@ -144,13 +159,21 @@ const askAboutDrug = async (req, res) => {
             });
             await newChatHistory.save();
           } else {
-            // Nếu đã có và câu hỏi khác câu trước thì cập nhật
-            if (existingChat.question !== question) {
-              existingChat.question = question;
-              existingChat.answer = answer;
-              existingChat.timestamp = new Date();
-              await existingChat.save();
+            // Nếu đã có thì thêm tin nhắn mới vào mảng messages
+            // Vẫn giữ nguyên question/answer cho tương thích ngược
+            existingChat.question = question;
+            existingChat.answer = answer;
+            existingChat.timestamp = new Date();
+            
+            // Nếu chưa có mảng messages thì tạo mới
+            if (!Array.isArray(existingChat.messages)) {
+              existingChat.messages = [];
             }
+            
+            // Thêm tin nhắn mới vào mảng
+            existingChat.messages.push(...newMessages);
+            
+            await existingChat.save();
           }
         } catch (historyError) {
           console.error('Lỗi khi lưu lịch sử chat:', historyError);
@@ -185,19 +208,44 @@ const askAboutDrug = async (req, res) => {
             drugQuery
           });
 
+          // Tạo đối tượng tin nhắn mới
+          const newMessages = [
+            {
+              role: 'user',
+              content: question,
+              timestamp: new Date()
+            },
+            {
+              role: 'assistant',
+              content: answer,
+              timestamp: new Date()
+            }
+          ];
+
           if (!existingChat) {
             const newChatHistory = new ChatHistory({
               userId: req.user.id,
               drugQuery,
               generic_name: sanitizedProductInfo.generic_name || sanitizedProductInfo.name,
               question,
-              answer
+              answer,
+              messages: newMessages // Thêm mảng messages
             });
             await newChatHistory.save();
-          } else if (existingChat.question !== question) {
+          } else {
+            // Cập nhật tin nhắn mới nhất và thêm vào mảng messages
             existingChat.question = question;
             existingChat.answer = answer;
             existingChat.timestamp = new Date();
+            
+            // Nếu chưa có mảng messages thì tạo mới
+            if (!Array.isArray(existingChat.messages)) {
+              existingChat.messages = [];
+            }
+            
+            // Thêm tin nhắn mới vào mảng
+            existingChat.messages.push(...newMessages);
+            
             await existingChat.save();
           }
         } catch (historyError) {
